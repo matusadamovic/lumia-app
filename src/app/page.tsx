@@ -25,8 +25,8 @@ export default function Home() {
   const [status,        setStatus]        = useState("Čakám na partnera…");
   const [hasLocalVideo, setHasLocalVideo] = useState(true);
 
-  /* ───────────────────── Socket lifecycle ───────────────────── */
-  useEffect(() => {
+  /* ─────────────────── Socket setup helper ─────────────────── */
+  function connectSocket() {
     const socket = io({ path: "/api/socket" });
     socketRef.current = socket;
 
@@ -36,6 +36,11 @@ export default function Home() {
     });
 
     socket.on("signal", (data: SignalData) => peerRef.current?.signal(data));
+  }
+
+  /* ───────────────────── Socket lifecycle ───────────────────── */
+  useEffect(() => {
+    connectSocket();
     return cleanup;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -102,6 +107,12 @@ export default function Home() {
     ls?.getTracks().forEach((t) => t.stop());
   }
 
+  function nextPartner() {
+    cleanup();
+    connectSocket();
+    setStatus("Čakám na partnera…");
+  }
+
   /* ─────────────────────────── UI ──────────────────────────── */
   return (
     <div className="h-screen flex flex-col items-center justify-center p-4">
@@ -128,7 +139,7 @@ export default function Home() {
       </div>
 
       <button
-        onClick={() => window.location.reload()}
+        onClick={nextPartner}
         className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
       >
         Ďalší partner
