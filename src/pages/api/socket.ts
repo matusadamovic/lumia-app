@@ -26,9 +26,17 @@ export default function handler(
 
   let waiting: string | null = null;
   const pairs = new Map<string, string>();
+  const reports = new Map<string, number>();
+  const REPORT_THRESHOLD = 3;
 
   io.on("connection", (socket) => {
     console.log("🆕 spojenie:", socket.id);
+
+    if ((reports.get(socket.id) ?? 0) >= REPORT_THRESHOLD) {
+      console.log(`⛔ Blocked user attempted connection: ${socket.id}`);
+      socket.disconnect();
+      return;
+    }
 
     if (waiting) {
       // máme čakača – spojme ich
@@ -44,6 +52,18 @@ export default function handler(
     }
 
     socket.on("signal", ({ to, data }) => io.to(to).emit("signal", data));
+
+    socket.on("report-user", (id: string) => {
+      const count = (reports.get(id) ?? 0) + 1;
+      reports.set(id, count);
+      console.log(`\uD83D\uDEA8 Report on ${id}: ${count}`);
+
+      if (count >= REPORT_THRESHOLD) {
+        const target = io.sockets.sockets.get(id);
+        target?.disconnect(true);
+        console.log(`\u26D4\uFE0F Disconnected ${id} due to reports`);
+      }
+    });
 
     socket.on("disconnect", () => {
       if (waiting === socket.id) waiting = null;

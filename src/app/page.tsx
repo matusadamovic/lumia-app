@@ -25,6 +25,8 @@ export default function Home() {
   const [status,        setStatus]        = useState("Čakám na partnera…");
   const [hasLocalVideo, setHasLocalVideo] = useState(true);
   const [nextEnabled,   setNextEnabled]   = useState(false);
+  const [partnerId,     setPartnerId]     = useState<string | null>(null);
+  const [hasReported,   setHasReported]   = useState(false);
 
   /* ─────────────────── Socket setup helper ─────────────────── */
   function connectSocket() {
@@ -34,6 +36,8 @@ export default function Home() {
 
     socket.on("match", ({ otherId, initiator }: MatchPayload) => {
       setStatus("Partner nájdený, pripájam kameru…");
+      setPartnerId(otherId);
+      setHasReported(false);
       startPeer(otherId, initiator);
       setNextEnabled(true);
     });
@@ -41,6 +45,8 @@ export default function Home() {
     socket.on("partner-left", () => {
       setStatus("Partner odišiel.");
       setNextEnabled(true);
+      setPartnerId(null);
+      setHasReported(false);
       peerRef.current?.destroy();
     });
 
@@ -117,6 +123,8 @@ export default function Home() {
     if (remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = null;
     }
+    setPartnerId(null);
+    setHasReported(false);
   }
 
   function nextPartner() {
@@ -124,6 +132,14 @@ export default function Home() {
     connectSocket();
     setStatus("Čakám na partnera…");
     setNextEnabled(false);
+    setPartnerId(null);
+    setHasReported(false);
+  }
+
+  function reportPartner() {
+    if (!partnerId || !socketRef.current) return;
+    socketRef.current.emit("report-user", partnerId);
+    setHasReported(true);
   }
 
   /* ─────────────────────────── UI ──────────────────────────── */
@@ -151,13 +167,22 @@ export default function Home() {
         />
       </div>
 
-      <button
-        onClick={nextPartner}
-        disabled={!nextEnabled}
-        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
-      >
-        Ďalší partner
-      </button>
+      <div className="flex gap-2">
+        <button
+          onClick={nextPartner}
+          disabled={!nextEnabled}
+          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+        >
+          Ďalší partner
+        </button>
+        <button
+          onClick={reportPartner}
+          disabled={!partnerId || hasReported}
+          className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
+        >
+          Nahlásiť
+        </button>
+      </div>
     </div>
   );
 }
