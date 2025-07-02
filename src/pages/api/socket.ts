@@ -25,6 +25,7 @@ export default function handler(
   res.socket.server.io = io;
 
   let waiting: string | null = null;
+  const pairs = new Map<string, string>();
 
   io.on("connection", (socket) => {
     console.log("🆕 spojenie:", socket.id);
@@ -34,6 +35,8 @@ export default function handler(
       io.to(socket.id).emit("match", { otherId: waiting, initiator: true });
       io.to(waiting).emit("match", { otherId: socket.id, initiator: false });
       console.log(`▶️ Párujem ${waiting} ↔ ${socket.id}`);
+      pairs.set(socket.id, waiting);
+      pairs.set(waiting, socket.id);
       waiting = null;
     } else {
       waiting = socket.id;
@@ -44,6 +47,14 @@ export default function handler(
 
     socket.on("disconnect", () => {
       if (waiting === socket.id) waiting = null;
+
+      const partner = pairs.get(socket.id);
+      if (partner) {
+        pairs.delete(socket.id);
+        pairs.delete(partner);
+        io.to(partner).emit("partner-left");
+      }
+
       console.log("❌ odpojenie:", socket.id);
     });
   });
