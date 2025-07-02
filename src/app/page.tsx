@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import io from "socket.io-client";
 import SimplePeer, { SignalData } from "simple-peer";
 
-type MatchPayload = { otherId: string; initiator: boolean };
+type MatchPayload = { peers: string[]; initiator: boolean };
 
 const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },
@@ -17,11 +17,15 @@ const ICE_SERVERS = [
 
 export default function Home() {
   const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
 
-  const peerRef   = useRef<SimplePeer.Instance | null>(null);
+  const peerRefs = useRef<Record<string, SimplePeer.Instance>>({});
   const socketRef = useRef<ReturnType<typeof io> | null>(null);
+  const remoteVideoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+
+  const [remoteStreams, setRemoteStreams] = useState<Record<string, MediaStream | null>>({});
+  const [remoteIds, setRemoteIds] = useState<string[]>([]);
+  const [groupSize, setGroupSize] = useState(1);
 
   const [status,        setStatus]        = useState("Kliknite Štart pre povolenie kamery…");
   const [hasLocalVideo, setHasLocalVideo] = useState(true);
@@ -35,15 +39,16 @@ export default function Home() {
   /* ─────────────────── Socket setup helper ─────────────────── */
   function connectSocket() {
     setNextEnabled(false);
-    const socket = io({ path: "/api/socket" });
+    const socket = io({ path: "/api/socket", auth: { size: groupSize } });
     socketRef.current = socket;
 
-    socket.on("match", ({ otherId, initiator }: MatchPayload) => {
-      setStatus("Partner nájdený, pripájam…");
-      setPartnerId(otherId);
+    socket.on("match", ({ peers, initiator }: MatchPayload) => {
+      setStatus("Partneri nájdení, pripájam…");
+      setPartnerId(peers[0] ?? null);
+      setRemoteIds(peers);
       setHasReported(false);
       setMessages([]);
-      startPeer(otherId, initiator);
+      startPeers(peers, initiator);
       setNextEnabled(true);
     });
 
@@ -51,12 +56,18 @@ export default function Home() {
       setStatus("Partner odišiel.");
       setNextEnabled(true);
       setPartnerId(null);
+      setRemoteIds([]);
       setHasReported(false);
       setMessages([]);
-      peerRef.current?.destroy();
+      Object.values(peerRefs.current).forEach((p) => p.destroy());
+      peerRefs.current = {};
+      setRemoteStreams({});
     });
 
-    socket.on("signal", (data: SignalData) => peerRef.current?.signal(data));
+    socket.on("signal", (data: { from: string; data: SignalData }) => {
+      const peer = peerRefs.current[data.from];
+      peer?.signal(data.data);
+    });
     socket.on("chat-message", (msg: string) =>
       setMessages((m) => [...m, { self: false, text: msg }])
     );
@@ -101,29 +112,40 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    Object.entries(remoteStreams).forEach(([id, s]) => {
+      const el = remoteVideoRefs.current[id];
+      if (el && s) {
+        el.srcObject = s;
+        el.playsInline = true;
+      }
+    });
+  }, [remoteStreams]);
+
   /* ─────────────────── WebRTC peer creation ─────────────────── */
-  async function startPeer(otherId: string, initiator: boolean) {
+  function startPeers(ids: string[], initiator: boolean) {
     const stream = localStreamRef.current ?? new MediaStream();
 
-    const peer = new SimplePeer({
-      initiator,
-      stream,
-      trickle: false,
-      config: { iceServers: ICE_SERVERS },
-    });
-    peerRef.current = peer;
+    ids.forEach((otherId) => {
+      const peer = new SimplePeer({
+        initiator,
+        stream,
+        trickle: false,
+        config: { iceServers: ICE_SERVERS },
+      });
+      peerRefs.current[otherId] = peer;
 
-    peer.on("signal", (sig) => socketRef.current?.emit("signal", { to: otherId, data: sig }));
-    peer.on("track", (_t, s) => {
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = s;
-        remoteVideoRef.current.playsInline = true;
-      }
-      setStatus("Video pripojené 🎉");
-    });
-    peer.on("error", (e) => {
-      console.error("peer error", e);
-      setStatus("Chyba spojenia, načítajte stránku znovu.");
+      peer.on("signal", (sig) =>
+        socketRef.current?.emit("signal", { to: otherId, data: sig })
+      );
+      peer.on("track", (_t, s) => {
+        setRemoteStreams((rs) => ({ ...rs, [otherId]: s }));
+        setStatus("Video pripojené 🎉");
+      });
+      peer.on("error", (e) => {
+        console.error("peer error", e);
+        setStatus("Chyba spojenia, načítajte stránku znovu.");
+      });
     });
   }
 
@@ -137,12 +159,12 @@ export default function Home() {
 
   /* ────────────────────── Cleanup helper ────────────────────── */
   function cleanupPeer() {
-    peerRef.current?.destroy();
+    Object.values(peerRefs.current).forEach((p) => p.destroy());
+    peerRefs.current = {};
     socketRef.current?.disconnect();
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = null;
-    }
+    setRemoteStreams({});
     setPartnerId(null);
+    setRemoteIds([]);
     setHasReported(false);
     setMessages([]);
     setNewMessage("");
@@ -166,6 +188,7 @@ export default function Home() {
     setStatus("Čakám na partnera…");
     setNextEnabled(false);
     setPartnerId(null);
+    setRemoteIds([]);
     setHasReported(false);
     setMessages([]);
     setNewMessage("");
@@ -192,7 +215,7 @@ export default function Home() {
       <h1 className="text-3xl font-bold mb-4">OmeTV Clone</h1>
       <p className="mb-4">{status}</p>
 
-      <div className="grid grid-cols-2 gap-4 w-full max-w-3xl mb-4">
+      <div className="flex flex-wrap gap-4 w-full max-w-3xl mb-4 justify-center">
         {/* LOCAL */}
         <div className="relative bg-black aspect-video rounded overflow-hidden">
           {!hasLocalVideo && (
@@ -203,12 +226,14 @@ export default function Home() {
           <video ref={localVideoRef} autoPlay muted className="w-full h-full object-cover" />
         </div>
 
-        {/* REMOTE */}
-        <video
-          ref={remoteVideoRef}
-          autoPlay
-          className="bg-black w-full aspect-video rounded object-cover"
-        />
+        {remoteIds.map((id) => (
+          <video
+            key={id}
+            ref={(el) => (remoteVideoRefs.current[id] = el)}
+            autoPlay
+            className="bg-black w-full aspect-video rounded object-cover"
+          />
+        ))}
       </div>
 
       {started && (
@@ -242,12 +267,23 @@ export default function Home() {
 
       <div className="flex gap-2">
         {!started ? (
-          <button
-            onClick={handleStart}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            Štart
-          </button>
+          <>
+            <select
+              value={groupSize}
+              onChange={(e) => setGroupSize(Number(e.target.value))}
+              className="px-2 py-1 border rounded"
+            >
+              <option value={1}>1v1</option>
+              <option value={2}>2v2</option>
+              <option value={3}>3v3</option>
+            </select>
+            <button
+              onClick={handleStart}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              Štart
+            </button>
+          </>
         ) : (
           <>
             <button
