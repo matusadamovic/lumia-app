@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import io from "socket.io-client";
 import SimplePeer, { SignalData } from "simple-peer";
 
@@ -29,6 +29,8 @@ export default function Home() {
   const [started,       setStarted]       = useState(false);
   const [partnerId,     setPartnerId]     = useState<string | null>(null);
   const [hasReported,   setHasReported]   = useState(false);
+  const [messages,      setMessages]      = useState<{ self: boolean; text: string }[]>([]);
+  const [newMessage,    setNewMessage]    = useState("");
 
   /* ─────────────────── Socket setup helper ─────────────────── */
   function connectSocket() {
@@ -40,6 +42,7 @@ export default function Home() {
       setStatus("Partner nájdený, pripájam…");
       setPartnerId(otherId);
       setHasReported(false);
+      setMessages([]);
       startPeer(otherId, initiator);
       setNextEnabled(true);
     });
@@ -49,10 +52,14 @@ export default function Home() {
       setNextEnabled(true);
       setPartnerId(null);
       setHasReported(false);
+      setMessages([]);
       peerRef.current?.destroy();
     });
 
     socket.on("signal", (data: SignalData) => peerRef.current?.signal(data));
+    socket.on("chat-message", (msg: string) =>
+      setMessages((m) => [...m, { self: false, text: msg }])
+    );
   }
 
   /* ─────────────────────── Camera setup ─────────────────────── */
@@ -137,6 +144,8 @@ export default function Home() {
     }
     setPartnerId(null);
     setHasReported(false);
+    setMessages([]);
+    setNewMessage("");
   }
 
   function cleanupFull() {
@@ -147,6 +156,8 @@ export default function Home() {
       localVideoRef.current.srcObject = null;
     }
     localStreamRef.current = null;
+    setMessages([]);
+    setNewMessage("");
   }
 
   function nextPartner() {
@@ -156,12 +167,23 @@ export default function Home() {
     setNextEnabled(false);
     setPartnerId(null);
     setHasReported(false);
+    setMessages([]);
+    setNewMessage("");
   }
 
   function reportPartner() {
     if (!partnerId || !socketRef.current) return;
     socketRef.current.emit("report-user", partnerId);
     setHasReported(true);
+  }
+
+  function sendMessage(e: FormEvent) {
+    e.preventDefault();
+    const msg = newMessage.trim();
+    if (!msg || !socketRef.current) return;
+    socketRef.current.emit("chat-message", msg);
+    setMessages((m) => [...m, { self: true, text: msg }]);
+    setNewMessage("");
   }
 
   /* ─────────────────────────── UI ──────────────────────────── */
@@ -188,6 +210,35 @@ export default function Home() {
           className="bg-black w-full aspect-video rounded object-cover"
         />
       </div>
+
+      {started && (
+        <div className="w-full max-w-3xl mb-4">
+          <div className="h-40 overflow-y-auto border rounded p-2 mb-2 bg-white text-black dark:bg-neutral-800 dark:text-white">
+            {messages.map((m, i) => (
+              <div key={i} className={m.self ? "text-right" : "text-left"}>
+                <span className="inline-block px-2 py-1 my-1 rounded bg-gray-200 text-black dark:bg-gray-700 dark:text-white">
+                  {m.text}
+                </span>
+              </div>
+            ))}
+          </div>
+          <form onSubmit={sendMessage} className="flex gap-2">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              className="flex-grow border rounded px-2 py-1 text-black"
+              placeholder="Napíšte správu..."
+            />
+            <button
+              type="submit"
+              className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Poslať
+            </button>
+          </form>
+        </div>
+      )}
 
       <div className="flex gap-2">
         {!started ? (

@@ -53,6 +53,11 @@ export default function handler(
 
     socket.on("signal", ({ to, data }) => io.to(to).emit("signal", data));
 
+    socket.on("chat-message", (msg: string) => {
+      const partner = pairs.get(socket.id);
+      if (partner) io.to(partner).emit("chat-message", msg);
+    });
+
     socket.on("report-user", (id: string) => {
       const count = (reports.get(id) ?? 0) + 1;
       reports.set(id, count);
