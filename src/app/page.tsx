@@ -24,15 +24,24 @@ export default function Home() {
 
   const [status,        setStatus]        = useState("Čakám na partnera…");
   const [hasLocalVideo, setHasLocalVideo] = useState(true);
+  const [nextEnabled,   setNextEnabled]   = useState(false);
 
   /* ─────────────────── Socket setup helper ─────────────────── */
   function connectSocket() {
+    setNextEnabled(false);
     const socket = io({ path: "/api/socket" });
     socketRef.current = socket;
 
     socket.on("match", ({ otherId, initiator }: MatchPayload) => {
       setStatus("Partner nájdený, pripájam kameru…");
       startPeer(otherId, initiator);
+      setNextEnabled(true);
+    });
+
+    socket.on("partner-left", () => {
+      setStatus("Partner odišiel.");
+      setNextEnabled(true);
+      peerRef.current?.destroy();
     });
 
     socket.on("signal", (data: SignalData) => peerRef.current?.signal(data));
@@ -105,12 +114,16 @@ export default function Home() {
     socketRef.current?.disconnect();
     const ls = localVideoRef.current?.srcObject as MediaStream | null;
     ls?.getTracks().forEach((t) => t.stop());
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = null;
+    }
   }
 
   function nextPartner() {
     cleanup();
     connectSocket();
     setStatus("Čakám na partnera…");
+    setNextEnabled(false);
   }
 
   /* ─────────────────────────── UI ──────────────────────────── */
@@ -140,7 +153,8 @@ export default function Home() {
 
       <button
         onClick={nextPartner}
-        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+        disabled={!nextEnabled}
+        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
       >
         Ďalší partner
       </button>
