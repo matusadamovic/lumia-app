@@ -18,13 +18,15 @@ const ICE_SERVERS = [
 export default function Home() {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
 
   const peerRef   = useRef<SimplePeer.Instance | null>(null);
   const socketRef = useRef<ReturnType<typeof io> | null>(null);
 
-  const [status,        setStatus]        = useState("Čakám na partnera…");
+  const [status,        setStatus]        = useState("Kliknite Štart pre povolenie kamery…");
   const [hasLocalVideo, setHasLocalVideo] = useState(true);
   const [nextEnabled,   setNextEnabled]   = useState(false);
+  const [started,       setStarted]       = useState(false);
   const [partnerId,     setPartnerId]     = useState<string | null>(null);
   const [hasReported,   setHasReported]   = useState(false);
 
@@ -35,7 +37,7 @@ export default function Home() {
     socketRef.current = socket;
 
     socket.on("match", ({ otherId, initiator }: MatchPayload) => {
-      setStatus("Partner nájdený, pripájam kameru…");
+      setStatus("Partner nájdený, pripájam…");
       setPartnerId(otherId);
       setHasReported(false);
       startPeer(otherId, initiator);
@@ -53,26 +55,20 @@ export default function Home() {
     socket.on("signal", (data: SignalData) => peerRef.current?.signal(data));
   }
 
-  /* ───────────────────── Socket lifecycle ───────────────────── */
-  useEffect(() => {
-    connectSocket();
-    return cleanup;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  /* ─────────────────────── Camera setup ─────────────────────── */
+  async function startCamera() {
+    if (localStreamRef.current) return;
 
-  /* ─────────────────── WebRTC peer creation ─────────────────── */
-  async function startPeer(otherId: string, initiator: boolean) {
     let stream: MediaStream;
-
     try {
       stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       attachLocalStream(stream);
+      localStreamRef.current = stream;
       setHasLocalVideo(true);
     } catch (err) {
       const e = err as DOMException;
       console.warn("getUserMedia:", e.name, e.message);
 
-      // zamietnuté povolenie alebo insecure HTTP: vysielame len „prázdny“ stream
       if (e.name === "NotAllowedError" || e.name === "SecurityError") {
         setStatus("Používateľ zamietol prístup ku kamere – prijímame len video druhej strany.");
       } else if (e.name === "NotFoundError") {
@@ -80,9 +76,27 @@ export default function Home() {
       } else {
         setStatus(`Chyba kamery: ${e.name}`);
       }
-      stream = new MediaStream();
+      localStreamRef.current = null;
       setHasLocalVideo(false);
     }
+  }
+
+  async function handleStart() {
+    await startCamera();
+    connectSocket();
+    setStatus("Čakám na partnera…");
+    setStarted(true);
+  }
+
+  /* ───────────────────── Socket lifecycle ───────────────────── */
+  useEffect(() => {
+    return cleanupFull;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ─────────────────── WebRTC peer creation ─────────────────── */
+  async function startPeer(otherId: string, initiator: boolean) {
+    const stream = localStreamRef.current ?? new MediaStream();
 
     const peer = new SimplePeer({
       initiator,
@@ -115,11 +129,9 @@ export default function Home() {
   }
 
   /* ────────────────────── Cleanup helper ────────────────────── */
-  function cleanup() {
+  function cleanupPeer() {
     peerRef.current?.destroy();
     socketRef.current?.disconnect();
-    const ls = localVideoRef.current?.srcObject as MediaStream | null;
-    ls?.getTracks().forEach((t) => t.stop());
     if (remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = null;
     }
@@ -127,8 +139,18 @@ export default function Home() {
     setHasReported(false);
   }
 
+  function cleanupFull() {
+    cleanupPeer();
+    const ls = localVideoRef.current?.srcObject as MediaStream | null;
+    ls?.getTracks().forEach((t) => t.stop());
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = null;
+    }
+    localStreamRef.current = null;
+  }
+
   function nextPartner() {
-    cleanup();
+    cleanupPeer();
     connectSocket();
     setStatus("Čakám na partnera…");
     setNextEnabled(false);
@@ -168,20 +190,31 @@ export default function Home() {
       </div>
 
       <div className="flex gap-2">
-        <button
-          onClick={nextPartner}
-          disabled={!nextEnabled}
-          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
-        >
-          Ďalší partner
-        </button>
-        <button
-          onClick={reportPartner}
-          disabled={!partnerId || hasReported}
-          className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
-        >
-          Nahlásiť
-        </button>
+        {!started ? (
+          <button
+            onClick={handleStart}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            Štart
+          </button>
+        ) : (
+          <>
+            <button
+              onClick={nextPartner}
+              disabled={!nextEnabled}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+            >
+              Ďalší partner
+            </button>
+            <button
+              onClick={reportPartner}
+              disabled={!partnerId || hasReported}
+              className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
+            >
+              Nahlásiť
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
