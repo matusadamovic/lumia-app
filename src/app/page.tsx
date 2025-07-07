@@ -20,19 +20,23 @@ export default function Home() {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
 
-  const peerRef   = useRef<SimplePeer.Instance | null>(null);
+  const peerRef = useRef<SimplePeer.Instance | null>(null);
   const socketRef = useRef<ReturnType<typeof io> | null>(null);
 
-  const [status,        setStatus]        = useState("Kliknite Štart pre povolenie kamery…");
+  const [status, setStatus] = useState(
+    "Kliknite Štart pre povolenie kamery…"
+  );
   const [hasLocalVideo, setHasLocalVideo] = useState(true);
-  const [nextEnabled,   setNextEnabled]   = useState(false);
-  const [started,       setStarted]       = useState(false);
-  const [partnerId,     setPartnerId]     = useState<string | null>(null);
-  const [hasReported,   setHasReported]   = useState(false);
-  const [messages,      setMessages]      = useState<{ self: boolean; text: string }[]>([]);
-  const [newMessage,    setNewMessage]    = useState("");
+  const [nextEnabled, setNextEnabled] = useState(false);
+  const [started, setStarted] = useState(false);
+  const [partnerId, setPartnerId] = useState<string | null>(null);
+  const [hasReported, setHasReported] = useState(false);
+  const [messages, setMessages] = useState<
+    { self: boolean; text: string }[]
+  >([]);
+  const [newMessage, setNewMessage] = useState("");
 
-  /* ─────────────────── Socket setup helper ─────────────────── */
+  /* ───── Socket setup ───── */
   function connectSocket() {
     setNextEnabled(false);
     const socket = io({ path: "/api/socket" });
@@ -56,28 +60,32 @@ export default function Home() {
       peerRef.current?.destroy();
     });
 
-    socket.on("signal", (data: SignalData) => peerRef.current?.signal(data));
+    socket.on("signal", (data: SignalData) =>
+      peerRef.current?.signal(data)
+    );
     socket.on("chat-message", (msg: string) =>
       setMessages((m) => [...m, { self: false, text: msg }])
     );
   }
 
-  /* ─────────────────────── Camera setup ─────────────────────── */
+  /* ───── Camera setup ───── */
   async function startCamera() {
     if (localStreamRef.current) return;
-
-    let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
       attachLocalStream(stream);
       localStreamRef.current = stream;
       setHasLocalVideo(true);
     } catch (err) {
       const e = err as DOMException;
       console.warn("getUserMedia:", e.name, e.message);
-
       if (e.name === "NotAllowedError" || e.name === "SecurityError") {
-        setStatus("Používateľ zamietol prístup ku kamere – prijímame len video druhej strany.");
+        setStatus(
+          "Používateľ zamietol prístup ku kamere – prijímame len video druhej strany."
+        );
       } else if (e.name === "NotFoundError") {
         setStatus("Nebola nájdená žiadna kamera ani mikrofón.");
       } else {
@@ -95,16 +103,11 @@ export default function Home() {
     setStarted(true);
   }
 
-  /* ───────────────────── Socket lifecycle ───────────────────── */
-  useEffect(() => {
-    return cleanupFull;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useEffect(() => cleanupFull, []);
 
-  /* ─────────────────── WebRTC peer creation ─────────────────── */
+  /* ───── Peer setup ───── */
   async function startPeer(otherId: string, initiator: boolean) {
     const stream = localStreamRef.current ?? new MediaStream();
-
     const peer = new SimplePeer({
       initiator,
       stream,
@@ -113,7 +116,9 @@ export default function Home() {
     });
     peerRef.current = peer;
 
-    peer.on("signal", (sig) => socketRef.current?.emit("signal", { to: otherId, data: sig }));
+    peer.on("signal", (sig) =>
+      socketRef.current?.emit("signal", { to: otherId, data: sig })
+    );
     peer.on("track", (_t, s) => {
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = s;
@@ -128,20 +133,18 @@ export default function Home() {
   }
 
   function attachLocalStream(s: MediaStream) {
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject  = s;
-      localVideoRef.current.muted      = true;
-      localVideoRef.current.playsInline = true;
-    }
+    if (!localVideoRef.current) return;
+    localVideoRef.current.srcObject = s;
+    localVideoRef.current.muted = true;
+    localVideoRef.current.playsInline = true;
   }
 
-  /* ────────────────────── Cleanup helper ────────────────────── */
+  /* ───── Cleanup ───── */
   function cleanupPeer() {
     peerRef.current?.destroy();
     socketRef.current?.disconnect();
-    if (remoteVideoRef.current) {
+    if (remoteVideoRef.current)
       remoteVideoRef.current.srcObject = null;
-    }
     setPartnerId(null);
     setHasReported(false);
     setMessages([]);
@@ -150,11 +153,11 @@ export default function Home() {
 
   function cleanupFull() {
     cleanupPeer();
-    const ls = localVideoRef.current?.srcObject as MediaStream | null;
+    const ls = localVideoRef.current
+      ?.srcObject as MediaStream | null;
     ls?.getTracks().forEach((t) => t.stop());
-    if (localVideoRef.current) {
+    if (localVideoRef.current)
       localVideoRef.current.srcObject = null;
-    }
     localStreamRef.current = null;
     setMessages([]);
     setNewMessage("");
@@ -186,84 +189,216 @@ export default function Home() {
     setNewMessage("");
   }
 
-  /* ─────────────────────────── UI ──────────────────────────── */
+  /* ───── UI ───── */
   return (
-    <div className="h-screen flex flex-col items-center justify-center p-4">
-      <h1 className="text-3xl font-bold mb-4">Lumia</h1>
-      <p className="mb-4">{status}</p>
-
-      <div className="flex flex-col md:flex-row w-screen h-screen gap-4 mb-4">
-        {/* REMOTE */}
-        <div className="flex-1 relative bg-black rounded overflow-hidden">
-          <video ref={remoteVideoRef} autoPlay className="w-full h-full object-cover" />
+    <div className="h-screen w-full flex flex-col">
+      {/* ─── MOBILE ─── */}
+      <div className="md:hidden flex flex-col flex-1 gap-0">
+        {/* partner video */}
+        <div className="flex-1 relative bg-black overflow-hidden">
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 flex items-center justify-center text-white text-sm bg-black/30 pointer-events-none">
+            {status}
+          </div>
         </div>
 
-        {/* LOCAL */}
-        <div className="flex-1 relative bg-black rounded overflow-hidden order-2 md:order-none">
+        {/* Lumia bar */}
+        <div
+          className="
+            absolute
+            top-1/2 left-1/2
+            transform -translate-x-1/2 -translate-y-1/2
+            z-10
+            flex items-center justify-center gap-3
+            bg-green-600/20 backdrop-blur-md
+            border border-white/30
+            text-white
+            px-4 py-2
+            rounded-2xl
+          "
+        >
+          <span className="font-semibold">Lumia</span>
+          {!started ? (
+            <button
+              onClick={handleStart}
+              className="px-4 py-2 bg-white text-green-600 rounded-lg"
+            >
+              Štart
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={nextPartner}
+                disabled={!nextEnabled}
+                className="px-4 py-2 bg-red-500 rounded-lg disabled:opacity-50"
+              >
+                Ďalší
+              </button>
+              <button
+                onClick={reportPartner}
+                disabled={!partnerId || hasReported}
+                className="px-4 py-2 bg-orange-400 rounded-lg disabled:opacity-50"
+              >
+                Nahlásiť
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* your video + chat */}
+        <div className="flex-1 relative bg-black overflow-hidden">
           {!hasLocalVideo && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-white text-sm">
               Kamera vypnutá
             </div>
           )}
-          <video ref={localVideoRef} autoPlay muted className="w-full h-full object-cover" />
+          <video
+            ref={localVideoRef}
+            autoPlay
+            muted
+            className="w-full h-full object-cover"
+          />
+
+          {/* chat overlay */}
+          {started && (
+            <div className="absolute inset-x-0 bottom-16 max-h-40 overflow-y-auto p-2 bg-black/50">
+              {messages.map((m, i) => (
+                <div
+                  key={i}
+                  className={m.self ? "text-right" : "text-left"}
+                >
+                  <span className="inline-block px-2 py-1 my-1 rounded bg-white/80 text-black">
+                    {m.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* chat input */}
+          {started && (
+            <form
+              onSubmit={sendMessage}
+              className="absolute inset-x-0 bottom-0 flex gap-2 p-2 bg-purple-600"
+            >
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                className="flex-grow border rounded px-2 py-1 text-black"
+                placeholder="Napíšte správu…"
+              />
+              <button
+                type="submit"
+                className="px-4 py-1 bg-blue-600 text-white rounded"
+              >
+                Poslať
+              </button>
+            </form>
+          )}
         </div>
       </div>
 
-      {started && (
-        <div className="w-full mb-4">
-          <div className="h-40 overflow-y-auto border rounded p-2 mb-2 bg-white text-black dark:bg-neutral-800 dark:text-white">
-            {messages.map((m, i) => (
-              <div key={i} className={m.self ? "text-right" : "text-left"}>
-                <span className="inline-block px-2 py-1 my-1 rounded bg-gray-200 text-black dark:bg-gray-700 dark:text-white">
-                  {m.text}
-                </span>
-              </div>
-            ))}
+      {/* ─── DESKTOP ─── */}
+      <div className="hidden md:flex relative flex-1 h-full">
+        {/* Left: partner camera */}
+        <div className="flex-1 relative bg-black overflow-hidden">
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 flex items-center justify-center text-white text-sm bg-black/30 pointer-events-none">
+            {status}
           </div>
-          <form onSubmit={sendMessage} className="flex gap-2">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              className="flex-grow border rounded px-2 py-1 text-black"
-              placeholder="Napíšte správu..."
-            />
-            <button
-              type="submit"
-              className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Poslať
-            </button>
-          </form>
         </div>
-      )}
 
-      <div className="flex gap-2">
-        {!started ? (
-          <button
-            onClick={handleStart}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            Štart
-          </button>
-        ) : (
-          <>
-            <button
-              onClick={nextPartner}
-              disabled={!nextEnabled}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+        {/* Right: your camera + chat */}
+        <div className="flex-1 relative bg-black overflow-hidden">
+          <video
+            ref={localVideoRef}
+            autoPlay
+            muted
+            className="w-full h-full object-cover"
+          />
+          {!hasLocalVideo && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-white text-sm">
+              Kamera vypnutá
+            </div>
+          )}
+
+          {started && (
+            <div className="absolute inset-x-0 bottom-16 max-h-48 overflow-y-auto p-2 bg-black/50">
+              {messages.map((m, i) => (
+                <div
+                  key={i}
+                  className={m.self ? "text-right" : "text-left"}
+                >
+                  <span className="inline-block px-2 py-1 my-1 rounded bg-white/80 text-black">
+                    {m.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {started && (
+            <form
+              onSubmit={sendMessage}
+              className="absolute inset-x-0 bottom-0 flex gap-2 p-2 bg-gray-100"
             >
-              Ďalší partner
-            </button>
-            <button
-              onClick={reportPartner}
-              disabled={!partnerId || hasReported}
-              className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
-            >
-              Nahlásiť
-            </button>
-          </>
-        )}
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                className="flex-grow border rounded px-2 py-1 text-black"
+                placeholder="Napíšte správu…"
+              />
+              <button
+                type="submit"
+                className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Poslať
+              </button>
+            </form>
+          )}
+        </div>
+
+        {/* Desktop action panel ako overlay */}
+        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center bg-green-600/20 backdrop-blur-md border border-white/30 text-white px-4 py-2 rounded-2xl z-10">
+          <span className="font-semibold">Lumia</span>
+          <div className="mt-4 flex flex-col gap-2">
+            {!started ? (
+              <button
+                onClick={handleStart}
+                className="px-4 py-2 bg-white text-green-600 rounded"
+              >
+                Štart
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={nextPartner}
+                  disabled={!nextEnabled}
+                  className="px-3 py-2 bg-red-600 rounded disabled:opacity-50"
+                >
+                  Ďalší
+                </button>
+                <button
+                  onClick={reportPartner}
+                  disabled={!partnerId || hasReported}
+                  className="px-3 py-2 bg-orange-600 rounded disabled:opacity-50"
+                >
+                  Nahlásiť
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
