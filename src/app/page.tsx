@@ -189,7 +189,7 @@ export default function Home() {
   /* ─────────────────────────── UI ──────────────────────────── */
   return (
     <div className="h-screen flex flex-col items-center justify-center p-4">
-      <h1 className="text-3xl font-bold mb-4">OmeTV Clone</h1>
+      <h1 className="text-3xl font-bold mb-4">Lumia</h1>
       <p className="mb-4">{status}</p>
 
       <div className="grid grid-cols-2 gap-4 w-full max-w-3xl mb-4">
