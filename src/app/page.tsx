@@ -103,6 +103,30 @@ export default function Home() {
     setStarted(true);
   }
 
+  /* ───── Cleanup ───── */
+  function cleanupPeer() {
+    peerRef.current?.destroy();
+    socketRef.current?.disconnect();
+    if (remoteVideoRef.current)
+      remoteVideoRef.current.srcObject = null;
+    setPartnerId(null);
+    setHasReported(false);
+    setMessages([]);
+    setNewMessage("");
+  }
+
+  const cleanupFull = useCallback(() => {
+    cleanupPeer();
+    const ls = localVideoRef.current
+      ?.srcObject as MediaStream | null;
+    ls?.getTracks().forEach((t) => t.stop());
+    if (localVideoRef.current)
+      localVideoRef.current.srcObject = null;
+    localStreamRef.current = null;
+    setMessages([]);
+    setNewMessage("");
+  }, []);
+
   useEffect(() => cleanupFull, [cleanupFull]);
 
   /* ───── Peer setup ───── */
@@ -139,29 +163,6 @@ export default function Home() {
     localVideoRef.current.playsInline = true;
   }
 
-  /* ───── Cleanup ───── */
-  function cleanupPeer() {
-    peerRef.current?.destroy();
-    socketRef.current?.disconnect();
-    if (remoteVideoRef.current)
-      remoteVideoRef.current.srcObject = null;
-    setPartnerId(null);
-    setHasReported(false);
-    setMessages([]);
-    setNewMessage("");
-  }
-
-  const cleanupFull = useCallback(() => {
-    cleanupPeer();
-    const ls = localVideoRef.current
-      ?.srcObject as MediaStream | null;
-    ls?.getTracks().forEach((t) => t.stop());
-    if (localVideoRef.current)
-      localVideoRef.current.srcObject = null;
-    localStreamRef.current = null;
-    setMessages([]);
-    setNewMessage("");
-  }, []);
 
   function nextPartner() {
     cleanupPeer();
