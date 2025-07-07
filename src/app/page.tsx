@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, useCallback, type FormEvent } from "react";
 import io from "socket.io-client";
 import SimplePeer, { SignalData } from "simple-peer";
 
@@ -103,7 +103,7 @@ export default function Home() {
     setStarted(true);
   }
 
-  useEffect(() => cleanupFull, []);
+  useEffect(() => cleanupFull, [cleanupFull]);
 
   /* ───── Peer setup ───── */
   async function startPeer(otherId: string, initiator: boolean) {
@@ -151,7 +151,7 @@ export default function Home() {
     setNewMessage("");
   }
 
-  function cleanupFull() {
+  const cleanupFull = useCallback(() => {
     cleanupPeer();
     const ls = localVideoRef.current
       ?.srcObject as MediaStream | null;
@@ -161,7 +161,7 @@ export default function Home() {
     localStreamRef.current = null;
     setMessages([]);
     setNewMessage("");
-  }
+  }, []);
 
   function nextPartner() {
     cleanupPeer();
