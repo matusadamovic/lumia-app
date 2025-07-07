@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback, type FormEvent } from "react";
 import io from "socket.io-client";
 import SimplePeer, { SignalData } from "simple-peer";
+import { MdSend, MdSwipe, MdNavigateNext, MdOutlineLocalPolice } from "react-icons/md";
 
 type MatchPayload = { otherId: string; initiator: boolean };
 
@@ -243,14 +244,15 @@ export default function Home() {
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                className="flex-grow border border-white/30 rounded px-2 py-1 bg-transparent text-white placeholder-white/70"
+                className="flex-grow border border-white/30 rounded-full px-3 py-1 bg-transparent text-white placeholder-white/70"
                 placeholder="Napíšte správu…"
               />
               <button
                 type="submit"
+                aria-label="Poslať"
                 className="px-4 py-1 bg-white/20 text-white rounded hover:bg-white/30"
               >
-                Poslať
+                <MdSend />
               </button>
             </form>
           )}
@@ -271,16 +273,19 @@ export default function Home() {
               <button
                 onClick={nextPartner}
                 disabled={!nextEnabled}
+                aria-label="Ďalší"
                 className="px-4 py-2 md:px-3 md:py-2 bg-red-500 md:bg-red-600 rounded-lg md:rounded disabled:opacity-50"
               >
-                Ďalší
+                <MdSwipe className="block md:hidden" />
+                <MdNavigateNext className="hidden md:block" />
               </button>
               <button
                 onClick={reportPartner}
                 disabled={!partnerId || hasReported}
+                aria-label="Nahlásiť"
                 className="px-4 py-2 md:px-3 md:py-2 bg-orange-400 md:bg-orange-600 rounded-lg md:rounded disabled:opacity-50"
               >
-                Nahlásiť
+                <MdOutlineLocalPolice />
               </button>
             </div>
           )}
