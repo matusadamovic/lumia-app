@@ -222,7 +222,7 @@ export default function Home() {
 
           {/* chat overlay */}
           {started && (
-            <div className="absolute inset-x-0 bottom-16 md:bottom-24 max-h-40 md:max-h-48 overflow-y-auto p-2 bg-black/50">
+            <div className="absolute inset-x-0 bottom-16 md:bottom-24 max-h-40 md:max-h-48 overflow-y-auto p-2 bg-transparent">
               {messages.map((m, i) => (
                 <div key={i} className={m.self ? "text-right" : "text-left"}>
                   <span className="inline-block px-2 py-1 my-1 rounded bg-white/80 text-black">
@@ -237,18 +237,18 @@ export default function Home() {
           {started && (
             <form
               onSubmit={sendMessage}
-              className="absolute inset-x-0 bottom-0 flex gap-2 p-2 bg-purple-600 md:bg-gray-100"
+              className="absolute inset-x-0 bottom-0 flex gap-2 p-2 bg-transparent"
             >
               <input
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                className="flex-grow border border-white/30 rounded px-2 py-1 bg-white/30 backdrop-blur-sm text-black placeholder-black/70"
+                className="flex-grow border border-white/30 rounded px-2 py-1 bg-transparent text-white placeholder-white/70"
                 placeholder="Napíšte správu…"
               />
               <button
                 type="submit"
-                className="px-4 py-1 bg-blue-600 text-white rounded md:hover:bg-blue-700"
+                className="px-4 py-1 bg-white/20 text-white rounded hover:bg-white/30"
               >
                 Poslať
               </button>
@@ -257,7 +257,7 @@ export default function Home() {
         </div>
 
         {/* action panel */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex items-center gap-3 md:flex-col md:gap-2 bg-green-600/20 backdrop-blur-md border border-white/30 text-white px-4 py-2 rounded-2xl">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex items-center gap-3 md:flex-col md:gap-2 bg-white/20 backdrop-blur-md border border-white/30 text-white px-4 py-2 rounded-2xl">
           <span className="font-semibold">Lumia</span>
           {!started ? (
             <button
