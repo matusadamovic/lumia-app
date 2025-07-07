@@ -243,7 +243,7 @@ export default function Home() {
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                className="flex-grow border rounded px-2 py-1 text-black"
+                className="flex-grow border border-white/30 rounded px-2 py-1 bg-white/30 backdrop-blur-sm text-black placeholder-black/70"
                 placeholder="Napíšte správu…"
               />
               <button
