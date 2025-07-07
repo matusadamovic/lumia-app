@@ -193,8 +193,7 @@ export default function Home() {
   /* ───── UI ───── */
   return (
     <div className="h-screen w-full flex flex-col">
-      {/* ─── MOBILE ─── */}
-      <div className="md:hidden flex flex-col flex-1 gap-0">
+      <div className="relative flex flex-col md:flex-row flex-1">
         {/* partner video */}
         <div className="flex-1 relative bg-black overflow-hidden">
           <video
@@ -205,49 +204,6 @@ export default function Home() {
           <div className="absolute inset-0 flex items-center justify-center text-white text-sm bg-black/30 pointer-events-none">
             {status}
           </div>
-        </div>
-
-        {/* Lumia bar */}
-        <div
-          className="
-            absolute
-            top-1/2 left-1/2
-            transform -translate-x-1/2 -translate-y-1/2
-            z-10
-            flex items-center justify-center gap-3
-            bg-green-600/20 backdrop-blur-md
-            border border-white/30
-            text-white
-            px-4 py-2
-            rounded-2xl
-          "
-        >
-          <span className="font-semibold">Lumia</span>
-          {!started ? (
-            <button
-              onClick={handleStart}
-              className="px-4 py-2 bg-white text-green-600 rounded-lg"
-            >
-              Štart
-            </button>
-          ) : (
-            <div className="flex gap-2">
-              <button
-                onClick={nextPartner}
-                disabled={!nextEnabled}
-                className="px-4 py-2 bg-red-500 rounded-lg disabled:opacity-50"
-              >
-                Ďalší
-              </button>
-              <button
-                onClick={reportPartner}
-                disabled={!partnerId || hasReported}
-                className="px-4 py-2 bg-orange-400 rounded-lg disabled:opacity-50"
-              >
-                Nahlásiť
-              </button>
-            </div>
-          )}
         </div>
 
         {/* your video + chat */}
@@ -266,12 +222,9 @@ export default function Home() {
 
           {/* chat overlay */}
           {started && (
-            <div className="absolute inset-x-0 bottom-16 max-h-40 overflow-y-auto p-2 bg-black/50">
+            <div className="absolute inset-x-0 bottom-16 md:bottom-24 max-h-40 md:max-h-48 overflow-y-auto p-2 bg-black/50">
               {messages.map((m, i) => (
-                <div
-                  key={i}
-                  className={m.self ? "text-right" : "text-left"}
-                >
+                <div key={i} className={m.self ? "text-right" : "text-left"}>
                   <span className="inline-block px-2 py-1 my-1 rounded bg-white/80 text-black">
                     {m.text}
                   </span>
@@ -284,7 +237,7 @@ export default function Home() {
           {started && (
             <form
               onSubmit={sendMessage}
-              className="absolute inset-x-0 bottom-0 flex gap-2 p-2 bg-purple-600"
+              className="absolute inset-x-0 bottom-0 flex gap-2 p-2 bg-purple-600 md:bg-gray-100"
             >
               <input
                 type="text"
@@ -295,73 +248,7 @@ export default function Home() {
               />
               <button
                 type="submit"
-                className="px-4 py-1 bg-blue-600 text-white rounded"
-              >
-                Poslať
-              </button>
-            </form>
-          )}
-        </div>
-      </div>
-
-      {/* ─── DESKTOP ─── */}
-      <div className="hidden md:flex relative flex-1 h-full">
-        {/* Left: partner camera */}
-        <div className="flex-1 relative bg-black overflow-hidden">
-          <video
-            ref={remoteVideoRef}
-            autoPlay
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 flex items-center justify-center text-white text-sm bg-black/30 pointer-events-none">
-            {status}
-          </div>
-        </div>
-
-        {/* Right: your camera + chat */}
-        <div className="flex-1 relative bg-black overflow-hidden">
-          <video
-            ref={localVideoRef}
-            autoPlay
-            muted
-            className="w-full h-full object-cover"
-          />
-          {!hasLocalVideo && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-white text-sm">
-              Kamera vypnutá
-            </div>
-          )}
-
-          {started && (
-            <div className="absolute inset-x-0 bottom-16 max-h-48 overflow-y-auto p-2 bg-black/50">
-              {messages.map((m, i) => (
-                <div
-                  key={i}
-                  className={m.self ? "text-right" : "text-left"}
-                >
-                  <span className="inline-block px-2 py-1 my-1 rounded bg-white/80 text-black">
-                    {m.text}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {started && (
-            <form
-              onSubmit={sendMessage}
-              className="absolute inset-x-0 bottom-0 flex gap-2 p-2 bg-gray-100"
-            >
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                className="flex-grow border rounded px-2 py-1 text-black"
-                placeholder="Napíšte správu…"
-              />
-              <button
-                type="submit"
-                className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="px-4 py-1 bg-blue-600 text-white rounded md:hover:bg-blue-700"
               >
                 Poslať
               </button>
@@ -369,36 +256,34 @@ export default function Home() {
           )}
         </div>
 
-        {/* Desktop action panel ako overlay */}
-        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center bg-green-600/20 backdrop-blur-md border border-white/30 text-white px-4 py-2 rounded-2xl z-10">
+        {/* action panel */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex items-center gap-3 md:flex-col md:gap-2 bg-green-600/20 backdrop-blur-md border border-white/30 text-white px-4 py-2 rounded-2xl">
           <span className="font-semibold">Lumia</span>
-          <div className="mt-4 flex flex-col gap-2">
-            {!started ? (
+          {!started ? (
+            <button
+              onClick={handleStart}
+              className="px-4 py-2 bg-white text-green-600 rounded-lg md:rounded"
+            >
+              Štart
+            </button>
+          ) : (
+            <div className="flex gap-2 md:flex-col">
               <button
-                onClick={handleStart}
-                className="px-4 py-2 bg-white text-green-600 rounded"
+                onClick={nextPartner}
+                disabled={!nextEnabled}
+                className="px-4 py-2 md:px-3 md:py-2 bg-red-500 md:bg-red-600 rounded-lg md:rounded disabled:opacity-50"
               >
-                Štart
+                Ďalší
               </button>
-            ) : (
-              <>
-                <button
-                  onClick={nextPartner}
-                  disabled={!nextEnabled}
-                  className="px-3 py-2 bg-red-600 rounded disabled:opacity-50"
-                >
-                  Ďalší
-                </button>
-                <button
-                  onClick={reportPartner}
-                  disabled={!partnerId || hasReported}
-                  className="px-3 py-2 bg-orange-600 rounded disabled:opacity-50"
-                >
-                  Nahlásiť
-                </button>
-              </>
-            )}
-          </div>
+              <button
+                onClick={reportPartner}
+                disabled={!partnerId || hasReported}
+                className="px-4 py-2 md:px-3 md:py-2 bg-orange-400 md:bg-orange-600 rounded-lg md:rounded disabled:opacity-50"
+              >
+                Nahlásiť
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
