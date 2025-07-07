@@ -192,9 +192,14 @@ export default function Home() {
       <h1 className="text-3xl font-bold mb-4">Lumia</h1>
       <p className="mb-4">{status}</p>
 
-      <div className="grid grid-cols-2 gap-4 w-full max-w-3xl mb-4">
+      <div className="flex flex-col md:flex-row w-screen h-screen gap-4 mb-4">
+        {/* REMOTE */}
+        <div className="flex-1 relative bg-black rounded overflow-hidden">
+          <video ref={remoteVideoRef} autoPlay className="w-full h-full object-cover" />
+        </div>
+
         {/* LOCAL */}
-        <div className="relative bg-black aspect-video rounded overflow-hidden">
+        <div className="flex-1 relative bg-black rounded overflow-hidden order-2 md:order-none">
           {!hasLocalVideo && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-white text-sm">
               Kamera vypnutá
@@ -202,17 +207,10 @@ export default function Home() {
           )}
           <video ref={localVideoRef} autoPlay muted className="w-full h-full object-cover" />
         </div>
-
-        {/* REMOTE */}
-        <video
-          ref={remoteVideoRef}
-          autoPlay
-          className="bg-black w-full aspect-video rounded object-cover"
-        />
       </div>
 
       {started && (
-        <div className="w-full max-w-3xl mb-4">
+        <div className="w-full mb-4">
           <div className="h-40 overflow-y-auto border rounded p-2 mb-2 bg-white text-black dark:bg-neutral-800 dark:text-white">
             {messages.map((m, i) => (
               <div key={i} className={m.self ? "text-right" : "text-left"}>
