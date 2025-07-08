@@ -44,13 +44,15 @@ function ProfilePage() {
   return (
     <div className="flex flex-col gap-4 p-4">
       <h1 className="text-2xl font-bold">Profile</h1>
-      <Image
-        src={profile.avatar_url ?? ''}
-        alt="Avatar"
-        width={128}
-        height={128}
-        className="w-32 h-32 object-cover rounded-full border"
-      />
+      {profile.avatar_url && (
+        <Image
+          src={profile.avatar_url}
+          alt="Avatar"
+          width={128}
+          height={128}
+          className="w-32 h-32 object-cover rounded-full border"
+        />
+      )}
       <p>Email: {user.email}</p>
       <p>Nickname: {profile.nickname ?? '-'}</p>
       <p>Birthdate: {profile.birthdate ?? '-'}</p>
