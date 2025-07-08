@@ -4,7 +4,9 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useUser, useSessionContext } from '@supabase/auth-helpers-react'
 
-export default function requireAuth<P>(Component: React.ComponentType<P>) {
+export default function requireAuth<P extends JSX.IntrinsicAttributes>(
+  Component: React.ComponentType<P>
+) {
   return function RequireAuth(props: P) {
     const router = useRouter()
     const { isLoading } = useSessionContext()
