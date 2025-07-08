@@ -16,6 +16,10 @@ export default function requireAuth<P>(Component: React.ComponentType<P>) {
       }
     }, [isLoading, user, router])
 
+    if (isLoading) {
+      return <p className="p-4">Loading...</p>
+    }
+
     if (!user) {
       return null
     }
