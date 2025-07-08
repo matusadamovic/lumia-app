@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import type { User } from "@supabase/supabase-js";
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import requireAuth from '@/lib/requireAuth';
 
-export default function ProfilePage() {
+function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,3 +43,6 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+export default requireAuth(ProfilePage);
+
