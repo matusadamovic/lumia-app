@@ -31,3 +31,27 @@ export async function fetchMyProfile(): Promise<Profile | null> {
   }
   return data as Profile | null;
 }
+
+export type ProfileUpdate = Partial<Omit<Profile, 'id'>>;
+
+/**
+ * Update the authenticated user's profile.
+ *
+ * @param fields - A subset of profile fields to update
+ * @returns An Error from Supabase if the update fails, otherwise null.
+ */
+export async function updateProfile(
+  fields: ProfileUpdate,
+): Promise<Error | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return new Error('No user');
+
+  const { error } = await supabase
+    .from('profiles')
+    .update(fields)
+    .eq('id', user.id);
+
+  return error;
+}
