@@ -40,4 +40,13 @@ body {
   .animate-blob-1 { animation: blob-move-1 18s ease-in-out infinite; }
   .animate-blob-2 { animation: blob-move-2 22s ease-in-out infinite; }
   .animate-blob-3 { animation: blob-move-3 20s ease-in-out infinite; }
+  @keyframes aurora {
+    0%, 100% {
+      background-position: 50% 50%, 50% 50%;
+    }
+    50% {
+      background-position: 60% 60%, 40% 40%;
+    }
+  }
+  .animate-aurora { animation: aurora 16s ease-in-out infinite; }
 }
