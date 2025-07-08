@@ -6,6 +6,7 @@ import Image from 'next/image';
 import {
   supabase,
   fetchMyProfile,
+  updateProfile,
   type Profile,
 } from '@/lib/supabaseClient';
 import { countries } from '@/lib/countries';
@@ -61,10 +62,12 @@ function EditProfilePage() {
         .getPublicUrl(uploadData.path).data.publicUrl;
     }
 
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ nickname, gender, location, avatar_url })
-      .eq('id', user.id);
+    const updateError = await updateProfile({
+      nickname,
+      gender,
+      location,
+      avatar_url,
+    });
 
     if (updateError) {
       setError(updateError.message);
