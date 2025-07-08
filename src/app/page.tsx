@@ -21,6 +21,8 @@ export default function Home() {
     };
   }, []);
 
+  //new
+
   return (
     <main className="flex flex-col md:flex-row min-h-screen p-4 gap-8 items-center justify-center">
       <div className="flex flex-col items-center justify-center flex-1 gap-4">
