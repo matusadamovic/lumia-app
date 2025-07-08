@@ -1,11 +1,12 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import React, { useEffect, ComponentType } from 'react'
+import type { JSX } from 'react'
 import { useUser, useSessionContext } from '@supabase/auth-helpers-react'
 
 export default function requireAuth<P extends JSX.IntrinsicAttributes>(
-  Component: React.ComponentType<P>
+  Component: ComponentType<P>
 ) {
   return function RequireAuth(props: P) {
     const router = useRouter()
