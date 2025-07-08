@@ -24,7 +24,7 @@ export default function Home() {
   //new
 
   return (
-    <main className="flex flex-col md:flex-row min-h-screen p-4 gap-8 items-center justify-center">
+    <main className="flex flex-col md:flex-row min-h-screen p-4 gap-8 items-center justify-center relative overflow-hidden">
       <div className="flex flex-col items-center justify-center flex-1 gap-4">
         <h1 className="text-4xl font-bold">Lumia</h1>
         <div className="text-sm text-gray-500">
