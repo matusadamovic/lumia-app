@@ -24,3 +24,20 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+@keyframes blob-move-1 {
+  0%, 100% { transform: translate(-20%, -10%) scale(1); }
+  50% { transform: translate(-10%, 10%) scale(1.1); }
+}
+@keyframes blob-move-2 {
+  0%, 100% { transform: translate(10%, 20%) scale(1); }
+  50% { transform: translate(20%, -20%) scale(1.1); }
+}
+@keyframes blob-move-3 {
+  0%, 100% { transform: translate(0%, 0%) scale(1); }
+  50% { transform: translate(-20%, 20%) scale(1.05); }
+}
+@layer utilities {
+  .animate-blob-1 { animation: blob-move-1 18s ease-in-out infinite; }
+  .animate-blob-2 { animation: blob-move-2 22s ease-in-out infinite; }
+  .animate-blob-3 { animation: blob-move-3 20s ease-in-out infinite; }
+}
