@@ -5,6 +5,7 @@ import type { User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { supabase, fetchMyProfile, type Profile } from '@/lib/supabaseClient';
+import { countries } from '@/lib/countries';
 import requireAuth from '@/lib/requireAuth';
 
 function ProfilePage() {
@@ -36,6 +37,10 @@ function ProfilePage() {
   if (!profile)
     return <p className="p-4">No profile information available.</p>;
 
+  const locationInfo = profile.location
+    ? countries.find((c) => c.name === profile.location)
+    : null;
+
   return (
     <div className="flex flex-col gap-4 p-4">
       <h1 className="text-2xl font-bold">Profile</h1>
@@ -50,7 +55,14 @@ function ProfilePage() {
       <p>Nickname: {profile.nickname ?? '-'}</p>
       <p>Birthdate: {profile.birthdate ?? '-'}</p>
       <p>Gender: {profile.gender ?? '-'}</p>
-      <p>Location: {profile.location ?? '-'}</p>
+      <p>
+        Location:{' '}
+        {profile.location
+          ? locationInfo
+            ? `${locationInfo.flag} ${locationInfo.name}`
+            : profile.location
+          : '-'}
+      </p>
       <button
         onClick={() => router.push('/profile/edit')}
         className="bg-blue-600 text-white rounded px-4 py-2 w-fit"
