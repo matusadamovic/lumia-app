@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import { countries } from '@/lib/countries';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -107,22 +108,34 @@ export default function RegisterPage() {
         className="border px-3 py-2 rounded"
         required
       />
-      <input
-        type="text"
+      <select
         value={gender}
         onChange={(e) => setGender(e.target.value)}
-        placeholder="Gender"
         className="border px-3 py-2 rounded"
         required
-      />
-      <input
-        type="text"
+      >
+        <option value="" disabled>
+          Select Gender
+        </option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Other">Other</option>
+      </select>
+      <select
         value={location}
         onChange={(e) => setLocation(e.target.value)}
-        placeholder="Location"
         className="border px-3 py-2 rounded"
         required
-      />
+      >
+        <option value="" disabled>
+          Select Country
+        </option>
+        {countries.map(({ code, name, flag }) => (
+          <option key={code} value={name}>
+            {`${flag} ${name}`}
+          </option>
+        ))}
+      </select>
       <input
         type="file"
         accept="image/*"
