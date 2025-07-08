@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { JSX, useEffect } from 'react'
 import { useUser, useSessionContext } from '@supabase/auth-helpers-react'
 
 export default function requireAuth<P extends JSX.IntrinsicAttributes>(
