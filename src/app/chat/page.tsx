@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback, type FormEvent } from "react"
 import io from "socket.io-client";
 import SimplePeer, { SignalData } from "simple-peer";
 import { MdSend, MdSwipe, MdNavigateNext, MdOutlineLocalPolice } from "react-icons/md";
+import requireAuth from "@/lib/requireAuth";
 
 type MatchPayload = { otherId: string; initiator: boolean };
 
@@ -16,7 +17,7 @@ const ICE_SERVERS = [
   },
 ];
 
-export default function Home() {
+function ChatPage() {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -294,3 +295,6 @@ export default function Home() {
     </div>
   );
 }
+
+export default requireAuth(ChatPage);
+
