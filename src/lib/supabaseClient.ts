@@ -23,7 +23,7 @@ export async function fetchMyProfile(): Promise<Profile | null> {
       'id, avatar_url, nickname, birthdate, gender, location'
     )
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('Error loading profile', error);
