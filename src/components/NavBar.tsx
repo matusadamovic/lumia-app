@@ -19,7 +19,9 @@ export default function NavBar() {
   }
 
   return (
-    <nav className="flex gap-4 p-4 border-b items-center">
+    <nav
+      className="flex gap-4 p-4 border-b items-center bg-white/30 backdrop-blur-md dark:bg-zinc-900/30"
+    >
       <Link href="/" aria-label="Home">
         <AiFillHome className="w-6 h-6" />
       </Link>
