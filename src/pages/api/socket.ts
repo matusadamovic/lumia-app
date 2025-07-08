@@ -28,8 +28,11 @@ export default function handler(
   const pairs = new Map<string, string>();
   const reports = new Map<string, number>();
   const REPORT_THRESHOLD = 3;
+  let onlineCount = 0;
 
   io.on("connection", (socket) => {
+    onlineCount++;
+    io.emit("online-count", onlineCount);
     console.log("🆕 spojenie:", socket.id);
 
     if ((reports.get(socket.id) ?? 0) >= REPORT_THRESHOLD) {
@@ -81,6 +84,8 @@ export default function handler(
       }
 
       console.log("❌ odpojenie:", socket.id);
+      onlineCount--;
+      io.emit("online-count", onlineCount);
     });
   });
 
