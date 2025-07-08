@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import io from 'socket.io-client';
-import { AuroraBackground } from '@/components/ui/aurora-background';
 
 export default function Home() {
   const [online, setOnline] = useState<number | null>(null);
@@ -25,7 +24,7 @@ export default function Home() {
   //new
 
   return (
-    <AuroraBackground className="flex flex-col md:flex-row min-h-screen p-4 gap-8 items-center justify-center relative overflow-hidden">
+    <div className="flex flex-col md:flex-row min-h-screen p-4 gap-8 items-center justify-center relative overflow-hidden">
       <div className="flex flex-col items-center justify-center flex-1 gap-4">
         <h1 className="text-4xl font-bold">Lumia</h1>
         <div className="text-sm text-gray-500">
@@ -39,6 +38,6 @@ export default function Home() {
         <button className="bg-gray-200 rounded px-4 py-2">Select Country</button>
         <button className="bg-gray-200 rounded px-4 py-2">Select Gender</button>
       </div>
-    </AuroraBackground>
+    </div>
   );
 }
