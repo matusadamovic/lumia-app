@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import io from 'socket.io-client';
+import BackgroundGradientAnimation from '@/components/BackgroundGradientAnimation';
 
 export default function Home() {
   const [online, setOnline] = useState<number | null>(null);
@@ -24,7 +25,8 @@ export default function Home() {
   //new
 
   return (
-    <main className="flex flex-col md:flex-row min-h-screen p-4 gap-8 items-center justify-center">
+    <main className="flex flex-col md:flex-row min-h-screen p-4 gap-8 items-center justify-center relative overflow-hidden">
+      <BackgroundGradientAnimation />
       <div className="flex flex-col items-center justify-center flex-1 gap-4">
         <h1 className="text-4xl font-bold">Lumia</h1>
         <div className="text-sm text-gray-500">
