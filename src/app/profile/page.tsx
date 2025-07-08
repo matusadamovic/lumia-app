@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { supabase, fetchMyProfile, type Profile } from '@/lib/supabaseClient';
 import requireAuth from '@/lib/requireAuth';
 
@@ -38,9 +39,11 @@ function ProfilePage() {
   return (
     <div className="flex flex-col gap-4 p-4">
       <h1 className="text-2xl font-bold">Profile</h1>
-      <img
+      <Image
         src={profile.avatar_url ?? ''}
         alt="Avatar"
+        width={128}
+        height={128}
         className="w-32 h-32 object-cover rounded-full border"
       />
       <p>Email: {user.email}</p>
