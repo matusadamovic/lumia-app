@@ -52,6 +52,12 @@ function ProfilePage() {
       <p>Gender: {profile.gender ?? '-'}</p>
       <p>Location: {profile.location ?? '-'}</p>
       <button
+        onClick={() => router.push('/profile/edit')}
+        className="bg-blue-600 text-white rounded px-4 py-2 w-fit"
+      >
+        Edit Profile
+      </button>
+      <button
         onClick={handleSignOut}
         className="bg-red-600 text-white rounded px-4 py-2 w-fit"
       >
