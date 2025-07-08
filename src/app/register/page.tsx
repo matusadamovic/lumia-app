@@ -15,7 +15,7 @@ export default function RegisterPage() {
     setError(null);
     const { error } = await supabase.auth.signUp({ email, password });
     if (!error) {
-      router.push('/home');
+      router.push('/');
     } else {
       setError(error.message);
     }
