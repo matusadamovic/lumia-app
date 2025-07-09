@@ -82,7 +82,7 @@ export default function Home() {
       {/* --------------------------------------- */}
     </Vortex>
     <BlurModal open={countryOpen} onClose={() => setCountryOpen(false)}>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
         {countries.map(({ code, name, flag }) => (
           <button
             key={code}
