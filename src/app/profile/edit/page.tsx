@@ -11,6 +11,8 @@ import {
 } from '@/lib/supabaseClient';
 import { countries } from '@/lib/countries';
 import requireAuth from '@/lib/requireAuth';
+import { Vortex } from '@/components/ui/vortex';
+import { glassClasses, cn } from '@/lib/utils';
 
 function EditProfilePage() {
   const router = useRouter();
@@ -81,15 +83,20 @@ function EditProfilePage() {
   if (!profile) return <p className="p-4">No profile found.</p>;
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-4 max-w-sm mx-auto p-4"
+    <Vortex
+      className="min-h-screen flex items-center justify-center"
+      containerClassName="bg-transparent"
+      particleCount={700}
+      baseHue={220}
+      backgroundColor="#000"
     >
-      <div className="flex flex-col items-center gap-2">
-        {avatarFile ? (
-          <Image
-            src={URL.createObjectURL(avatarFile)}
-            alt="Avatar preview"
+      <div className={cn(glassClasses, 'p-4 max-w-md w-full')}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col items-center gap-2">
+            {avatarFile ? (
+              <Image
+                src={URL.createObjectURL(avatarFile)}
+                alt="Avatar preview"
             width={128}
             height={128}
             className="w-32 h-32 object-cover rounded-full border"
@@ -143,11 +150,13 @@ function EditProfilePage() {
           <option key={code} value={name}>{flag}</option>
         ))}
       </select>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-      <button type="submit" className="bg-blue-600 text-white rounded px-4 py-2">
-        Save
-      </button>
-    </form>
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+          <button type="submit" className="bg-blue-600 text-white rounded px-4 py-2">
+            Save
+          </button>
+        </form>
+      </div>
+    </Vortex>
   );
 }
 

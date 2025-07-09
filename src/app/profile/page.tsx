@@ -7,6 +7,8 @@ import Image from 'next/image';
 import { supabase, fetchMyProfile, type Profile } from '@/lib/supabaseClient';
 import { countries } from '@/lib/countries';
 import requireAuth from '@/lib/requireAuth';
+import { Vortex } from '@/components/ui/vortex';
+import { glassClasses, cn } from '@/lib/utils';
 
 function ProfilePage() {
   const router = useRouter();
@@ -42,7 +44,14 @@ function ProfilePage() {
     : null;
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <Vortex
+      className="min-h-screen flex items-center justify-center"
+      containerClassName="bg-transparent"
+      particleCount={700}
+      baseHue={220}
+      backgroundColor="#000"
+    >
+      <div className={cn(glassClasses, 'p-4 max-w-md w-full flex flex-col gap-4')}>
       <h1 className="text-2xl font-bold">Profile</h1>
       {profile.avatar_url && (
         <Image
@@ -77,7 +86,8 @@ function ProfilePage() {
       >
         Sign Out
       </button>
-    </div>
+      </div>
+    </Vortex>
   );
 }
 
