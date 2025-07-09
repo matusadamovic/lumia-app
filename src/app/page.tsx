@@ -10,7 +10,6 @@ import { countries } from '@/lib/countries';
 import BlurModal from '@/components/ui/BlurModal';
 import { AiOutlineGlobal } from 'react-icons/ai';
 import { MdOutlineWc } from 'react-icons/md';
-import BlurModal from '@/components/ui/BlurModal';
 
 export default function Home() {
   const [online, setOnline] = useState<number | null>(null);
@@ -34,6 +33,7 @@ export default function Home() {
   }, []);
 
   return (
+    <>
     <Vortex
       /* Tailwind trieda Vortexu, v ktorej držíš layout */
       className="flex flex-col md:flex-row min-h-screen p-4 gap-8 items-center justify-center"
@@ -68,19 +68,6 @@ export default function Home() {
           >
             {country ? countries.find((c) => c.name === country)?.flag : <AiOutlineGlobal />}
           </button>
-          <BlurModal open={countryOpen} onClose={() => setCountryOpen(false)}>
-            {countries.map(({ code, name, flag }) => (
-              <button
-                key={code}
-                onClick={() => {
-                  setCountry(name);
-                  setCountryOpen(false);
-                }}
-              >
-                {flag} {name}
-              </button>
-            ))}
-          </BlurModal>
         </div>
         <div className="relative">
           <button
@@ -90,40 +77,54 @@ export default function Home() {
           >
             {gender === 'Male' ? '♂️' : gender === 'Female' ? '♀️' : gender === 'Other' ? '⚧' : <MdOutlineWc />}
           </button>
-          <BlurModal open={genderOpen} onClose={() => setGenderOpen(false)}>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => {
-                  setGender('Male');
-                  setGenderOpen(false);
-                }}
-                className="block px-2 py-1 w-full text-left hover:bg-white/20"
-              >
-                ♂️ Male
-              </button>
-              <button
-                onClick={() => {
-                  setGender('Female');
-                  setGenderOpen(false);
-                }}
-                className="block px-2 py-1 w-full text-left hover:bg-white/20"
-              >
-                ♀️ Female
-              </button>
-              <button
-                onClick={() => {
-                  setGender('Other');
-                  setGenderOpen(false);
-                }}
-                className="block px-2 py-1 w-full text-left hover:bg-white/20"
-              >
-                ⚧ Other
-              </button>
-            </div>
-          </BlurModal>
         </div>
       </div>
       {/* --------------------------------------- */}
     </Vortex>
+    <BlurModal open={countryOpen} onClose={() => setCountryOpen(false)}>
+      {countries.map(({ code, name, flag }) => (
+        <button
+          key={code}
+          onClick={() => {
+            setCountry(name);
+            setCountryOpen(false);
+          }}
+        >
+          {flag} {name}
+        </button>
+      ))}
+    </BlurModal>
+    <BlurModal open={genderOpen} onClose={() => setGenderOpen(false)}>
+      <div className="flex flex-col gap-2">
+        <button
+          onClick={() => {
+            setGender('Male');
+            setGenderOpen(false);
+          }}
+          className="block px-2 py-1 w-full text-left hover:bg-white/20"
+        >
+          ♂️ Male
+        </button>
+        <button
+          onClick={() => {
+            setGender('Female');
+            setGenderOpen(false);
+          }}
+          className="block px-2 py-1 w-full text-left hover:bg-white/20"
+        >
+          ♀️ Female
+        </button>
+        <button
+          onClick={() => {
+            setGender('Other');
+            setGenderOpen(false);
+          }}
+          className="block px-2 py-1 w-full text-left hover:bg-white/20"
+        >
+          ⚧ Other
+        </button>
+      </div>
+    </BlurModal>
+  </>
   );
 }
