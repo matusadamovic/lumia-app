@@ -38,7 +38,11 @@ export default function Home() {
         {/* ----- tvoj pôvodný obsah stránky ----- */}
         <div className="flex flex-col items-center justify-center flex-1 gap-4">
           <div className={cn(glassClasses, 'px-4 py-2 text-center')}>
-            <h1 className="text-4xl font-bold">Lumia</h1>
+            <h1 className="text-4xl font-bold flex gap-1">
+              {Array.from('LUMIA').map((letter) => (
+                <span key={letter} className={cn(glassClasses, 'px-1')}>{letter}</span>
+              ))}
+            </h1>
           </div>
           <div className="text-sm text-gray-300">
             Live online users: {online ?? '--'}
