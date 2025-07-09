@@ -7,12 +7,16 @@ import io from 'socket.io-client';
 import { Vortex } from '@/components/ui/vortex';   // ← nový import
 import { glassClasses, cn } from '@/lib/utils';
 import { countries } from '@/lib/countries';
+import { AiOutlineGlobal } from 'react-icons/ai';
+import { MdOutlineWc } from 'react-icons/md';
 
 export default function Home() {
   const [online, setOnline] = useState<number | null>(null);
   const socketRef = useRef<ReturnType<typeof io> | null>(null);
   const [country, setCountry] = useState('');
   const [gender, setGender] = useState('');
+  const [countryOpen, setCountryOpen] = useState(false);
+  const [genderOpen, setGenderOpen] = useState(false);
 
   useEffect(() => {
     const socket = io({ path: '/api/socket' });
@@ -54,30 +58,78 @@ export default function Home() {
         >
           Start Videochat
         </Link>
-        <select
-          value={country}
-          onChange={(e) => setCountry(e.target.value)}
-          className={cn(glassClasses, 'px-4 py-2 text-black')}
-        >
-          <option value="" disabled>
-            Select Country
-          </option>
-          {countries.map(({ code, name, flag }) => (
-            <option key={code} value={name}>{flag}</option>
-          ))}
-        </select>
-        <select
-          value={gender}
-          onChange={(e) => setGender(e.target.value)}
-          className={cn(glassClasses, 'px-4 py-2 text-black')}
-        >
-          <option value="" disabled>
-            Select Gender
-          </option>
-          <option value="Male">♂️</option>
-          <option value="Female">♀️</option>
-          <option value="Other">⚧</option>
-        </select>
+        <div className="relative">
+          <button
+            onClick={() => setCountryOpen((o) => !o)}
+            aria-label="Select Country"
+            className={cn(glassClasses, 'p-2 text-black flex items-center justify-center')}
+          >
+            {country ? countries.find((c) => c.name === country)?.flag : <AiOutlineGlobal />}
+          </button>
+          {countryOpen && (
+            <ul className="absolute z-10 mt-2 left-0 bg-white text-black rounded shadow">
+              {countries.map(({ code, name, flag }) => (
+                <li key={code}>
+                  <button
+                    onClick={() => {
+                      setCountry(name);
+                      setCountryOpen(false);
+                    }}
+                    className="block px-2 py-1 w-full text-left hover:bg-gray-100"
+                  >
+                    {flag}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="relative">
+          <button
+            onClick={() => setGenderOpen((o) => !o)}
+            aria-label="Select Gender"
+            className={cn(glassClasses, 'p-2 text-black flex items-center justify-center')}
+          >
+            {gender === 'Male' ? '♂️' : gender === 'Female' ? '♀️' : gender === 'Other' ? '⚧' : <MdOutlineWc />}
+          </button>
+          {genderOpen && (
+            <ul className="absolute z-10 mt-2 left-0 bg-white text-black rounded shadow">
+              <li>
+                <button
+                  onClick={() => {
+                    setGender('Male');
+                    setGenderOpen(false);
+                  }}
+                  className="block px-2 py-1 w-full text-left hover:bg-gray-100"
+                >
+                  ♂️
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => {
+                    setGender('Female');
+                    setGenderOpen(false);
+                  }}
+                  className="block px-2 py-1 w-full text-left hover:bg-gray-100"
+                >
+                  ♀️
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => {
+                    setGender('Other');
+                    setGenderOpen(false);
+                  }}
+                  className="block px-2 py-1 w-full text-left hover:bg-gray-100"
+                >
+                  ⚧
+                </button>
+              </li>
+            </ul>
+          )}
+        </div>
       </div>
       {/* --------------------------------------- */}
     </Vortex>
