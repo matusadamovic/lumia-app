@@ -127,9 +127,9 @@ function EditProfilePage() {
         <option value="" disabled>
           Select Gender
         </option>
-        <option value="Male">Male</option>
-        <option value="Female">Female</option>
-        <option value="Other">Other</option>
+        <option value="Male">♂️</option>
+        <option value="Female">♀️</option>
+        <option value="Other">⚧</option>
       </select>
       <select
         value={location}
@@ -140,7 +140,7 @@ function EditProfilePage() {
           Select Country
         </option>
         {countries.map(({ code, name, flag }) => (
-          <option key={code} value={name}>{`${flag} ${name}`}</option>
+          <option key={code} value={name}>{flag}</option>
         ))}
       </select>
       {error && <p className="text-red-600 text-sm">{error}</p>}
