@@ -23,5 +23,12 @@ create policy "Avatar uploads" on storage.objects
     bucket_id = 'avatars' and auth.role() = 'authenticated'
   );
 
+create policy "Avatar updates" on storage.objects
+  for update using (
+    bucket_id = 'avatars' and auth.uid() = owner
+  ) with check (
+    bucket_id = 'avatars' and auth.uid() = owner
+  );
+
 create policy "Avatar read" on storage.objects
   for select using (bucket_id = 'avatars');
