@@ -1,17 +1,30 @@
+/* globals.css (alebo ak sa volá inak) */
 @import "tailwindcss";
 
+/* 🎨 tvoje vlastné keyframes ostávajú ako sú */
 @theme inline {
   --animate-aurora: aurora 60s linear infinite;
   @keyframes aurora {
     from {
-      background-position:
-        50% 50%,
-        50% 50%;
+      background-position: 50% 50%, 50% 50%;
     }
     to {
-      background-position:
-        350% 50%,
-        350% 50%;
+      background-position: 350% 50%, 350% 50%;
     }
+  }
+}
+
+/* ➕ PRIDAJ TENTO BLOK */
+@layer base {
+  html {
+    /* ak používaš vlastný Google font cez next/font, 
+       nechaj Tailwind premennú (napr. var(--font-sans)) navrchu */
+    font-family:
+      var(--font-sans, ui-sans-serif),
+      system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+      Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+      /* emoji fallbacky – kľúčová časť */
+      "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+      "Noto Color Emoji";
   }
 }
