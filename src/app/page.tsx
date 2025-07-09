@@ -82,17 +82,21 @@ export default function Home() {
       {/* --------------------------------------- */}
     </Vortex>
     <BlurModal open={countryOpen} onClose={() => setCountryOpen(false)}>
-      {countries.map(({ code, name, flag }) => (
-        <button
-          key={code}
-          onClick={() => {
-            setCountry(name);
-            setCountryOpen(false);
-          }}
-        >
-          {flag} {name}
-        </button>
-      ))}
+      <div className="flex flex-col gap-2">
+        {countries.map(({ code, name, flag }) => (
+          <button
+            key={code}
+            onClick={() => {
+              setCountry(name);
+              setCountryOpen(false);
+            }}
+            className="block px-2 py-1 w-full text-left hover:bg-white/20 flex items-center gap-2"
+          >
+            <span className="text-xl">{flag}</span>
+            {name}
+          </button>
+        ))}
+      </div>
     </BlurModal>
     <BlurModal open={genderOpen} onClose={() => setGenderOpen(false)}>
       <div className="flex flex-col gap-2">
