@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import io from 'socket.io-client';
 //import { AuroraBackground } from '@/components/ui/aurora-background'; // uprav cestu podľa svojej štruktúry
 import { Vortex } from '@/components/ui/vortex';   // ← nový import
+import { glassClasses, cn } from '@/lib/utils';
 
 export default function Home() {
   const [online, setOnline] = useState<number | null>(null);
@@ -44,13 +45,14 @@ export default function Home() {
       </div>
 
       <div className="flex flex-col items-center justify-center flex-1 gap-4">
-        <Link href="/chat" className="bg-blue-600 text-white rounded px-4 py-2">
+        <Link href="/chat" className={cn(glassClasses, 'px-4 py-2')}
+        >
           Start Videochat
         </Link>
-        <button className="bg-gray-200/40 backdrop-blur rounded px-4 py-2">
+        <button className={cn(glassClasses, 'px-4 py-2')}>
           Select Country
         </button>
-        <button className="bg-gray-200/40 backdrop-blur rounded px-4 py-2">
+        <button className={cn(glassClasses, 'px-4 py-2')}>
           Select Gender
         </button>
       </div>
