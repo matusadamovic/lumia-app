@@ -6,6 +6,7 @@ import io from 'socket.io-client';
 //import { AuroraBackground } from '@/components/ui/aurora-background'; // uprav cestu podľa svojej štruktúry
 import { Vortex } from '@/components/ui/vortex';   // ← nový import
 import { glassClasses, cn } from '@/lib/utils';
+import GlassSelect from '@/components/GlassSelect';
 import { countries } from '@/lib/countries';
 
 export default function Home() {
@@ -54,10 +55,10 @@ export default function Home() {
         >
           Start Videochat
         </Link>
-        <select
+        <GlassSelect
           value={country}
           onChange={(e) => setCountry(e.target.value)}
-          className={cn(glassClasses, 'px-4 py-2 text-black')}
+          className="text-white"
         >
           <option value="" disabled>
             Select Country
@@ -65,11 +66,11 @@ export default function Home() {
           {countries.map(({ code, name, flag }) => (
             <option key={code} value={name}>{`${flag} ${name}`}</option>
           ))}
-        </select>
-        <select
+        </GlassSelect>
+        <GlassSelect
           value={gender}
           onChange={(e) => setGender(e.target.value)}
-          className={cn(glassClasses, 'px-4 py-2 text-black')}
+          className="text-white"
         >
           <option value="" disabled>
             Select Gender
@@ -77,7 +78,7 @@ export default function Home() {
           <option value="Male">Male</option>
           <option value="Female">Female</option>
           <option value="Other">Other</option>
-        </select>
+        </GlassSelect>
       </div>
       {/* --------------------------------------- */}
     </Vortex>
