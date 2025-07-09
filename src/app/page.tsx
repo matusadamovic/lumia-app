@@ -7,6 +7,7 @@ import io from 'socket.io-client';
 import { Vortex } from '@/components/ui/vortex';   // ← nový import
 import { glassClasses, cn, iconButtonClasses } from '@/lib/utils';
 import { countries } from '@/lib/countries';
+import BlurModal from '@/components/ui/BlurModal';
 import { AiOutlineGlobal } from 'react-icons/ai';
 import { MdOutlineWc } from 'react-icons/md';
 
@@ -58,7 +59,7 @@ export default function Home() {
         >
           Start Videochat
         </Link>
-        <div className="relative">
+        <div>
           <button
             onClick={() => setCountryOpen((o) => !o)}
             aria-label="Select Country"
@@ -66,23 +67,19 @@ export default function Home() {
           >
             {country ? countries.find((c) => c.name === country)?.flag : <AiOutlineGlobal />}
           </button>
-          {countryOpen && (
-            <ul className="absolute z-10 mt-2 left-0 bg-white text-black rounded shadow">
-              {countries.map(({ code, name, flag }) => (
-                <li key={code}>
-                  <button
-                    onClick={() => {
-                      setCountry(name);
-                      setCountryOpen(false);
-                    }}
-                    className="block px-2 py-1 w-full text-left hover:bg-gray-100"
-                  >
-                    {flag}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <BlurModal open={countryOpen} onClose={() => setCountryOpen(false)}>
+            {countries.map(({ code, name, flag }) => (
+              <button
+                key={code}
+                onClick={() => {
+                  setCountry(name);
+                  setCountryOpen(false);
+                }}
+              >
+                {flag} {name}
+              </button>
+            ))}
+          </BlurModal>
         </div>
         <div className="relative">
           <button
