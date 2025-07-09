@@ -40,7 +40,7 @@ export default function Home() {
           <div className={cn(glassClasses, 'px-4 py-2 text-center')}>
             <h1 className="text-4xl font-bold flex gap-1">
               {Array.from('LUMIA').map((letter) => (
-                <span key={letter} className={cn(glassClasses, 'px-1')}>{letter}</span>
+                <span key={letter} className="px-1">{letter}</span>
               ))}
             </h1>
           </div>

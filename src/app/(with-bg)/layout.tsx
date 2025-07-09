@@ -13,7 +13,7 @@ export default function WithBgLayout({ children }: { children: React.ReactNode }
     socketRef.current = socket;
 
     const handleCount = (count: number) => {
-      setParticleCount(count < 50 ? 700 : count);
+      setParticleCount(count < 4 ? 700 : count);
     };
 
     socket.on('online-count', handleCount);
