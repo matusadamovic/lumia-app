@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import io from 'socket.io-client';
-import { AuroraBackground } from '@/components/ui/aurora-background'; // uprav cestu podľa svojej štruktúry
+//import { AuroraBackground } from '@/components/ui/aurora-background'; // uprav cestu podľa svojej štruktúry
+import { Vortex } from '@/components/ui/vortex';   // ← nový import
 
 export default function Home() {
   const [online, setOnline] = useState<number | null>(null);
@@ -23,13 +24,21 @@ export default function Home() {
   }, []);
 
   return (
-    <AuroraBackground
+    <Vortex
+      /* Tailwind trieda Vortexu, v ktorej držíš layout */
       className="flex flex-col md:flex-row min-h-screen p-4 gap-8 items-center justify-center"
-      showRadialGradient={true} // alebo false, ak gradient nechceš
+      /* Tailwind trieda pre absolútny div s canvasom (voliteľné) */
+      containerClassName="bg-transparent"
+      /* príklady vlastných props – prispôsob podľa seba */
+      particleCount={700}
+      baseHue={220}          // východzia farba (modro-fialová)
+      //rangeHue={100}         // rozsah odtieňov
+      backgroundColor="#000" // farba pozadia, ak nechceš, nechaj default
     >
+      {/* ----- tvoj pôvodný obsah stránky ----- */}
       <div className="flex flex-col items-center justify-center flex-1 gap-4">
         <h1 className="text-4xl font-bold">Lumia</h1>
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-gray-300">
           Live online users: {online ?? '--'}
         </div>
       </div>
@@ -38,9 +47,14 @@ export default function Home() {
         <Link href="/chat" className="bg-blue-600 text-white rounded px-4 py-2">
           Start Videochat
         </Link>
-        <button className="bg-gray-200 rounded px-4 py-2">Select Country</button>
-        <button className="bg-gray-200 rounded px-4 py-2">Select Gender</button>
+        <button className="bg-gray-200/40 backdrop-blur rounded px-4 py-2">
+          Select Country
+        </button>
+        <button className="bg-gray-200/40 backdrop-blur rounded px-4 py-2">
+          Select Gender
+        </button>
       </div>
-    </AuroraBackground>
+      {/* --------------------------------------- */}
+    </Vortex>
   );
 }
