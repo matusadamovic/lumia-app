@@ -37,7 +37,9 @@ export default function Home() {
       <div className="flex flex-col md:flex-row min-h-screen p-4 gap-8 items-center justify-center">
         {/* ----- tvoj pôvodný obsah stránky ----- */}
         <div className="flex flex-col items-center justify-center flex-1 gap-4">
-          <h1 className="text-4xl font-bold">Lumia</h1>
+          <div className={cn(glassClasses, 'px-4 py-2 text-center')}>
+            <h1 className="text-4xl font-bold">Lumia</h1>
+          </div>
           <div className="text-sm text-gray-300">
             Live online users: {online ?? '--'}
           </div>
