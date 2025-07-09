@@ -1,6 +1,7 @@
 "use client";
 
-import React, { ReactNode, useEffect, useState } from "react";
+import React, { ReactNode, useEffect, useState, useRef } from "react";
+import twemoji from "twemoji";
 import { createPortal } from "react-dom";
 
 interface BlurModalProps {
@@ -18,11 +19,22 @@ export default function BlurModal({
   children,
 }: BlurModalProps) {
   const [mounted, setMounted] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
   // Ensure the modal is rendered only after the component is mounted
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (open && ref.current) {
+      twemoji.parse(ref.current, {
+        base: "/twemoji/",
+        folder: "svg",
+        ext: ".svg",
+      });
+    }
+  }, [open]);
 
   if (!mounted || !open) return null;
 
@@ -39,7 +51,7 @@ export default function BlurModal({
       className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm flex items-center justify-center"
       onClick={handleOverlayClick}
     >
-      <div className="bg-white/20 text-white border border-white/30 rounded-2xl p-4">
+      <div ref={ref} className="bg-white/20 text-white border border-white/30 rounded-2xl p-4">
         {children}
       </div>
     </div>,
