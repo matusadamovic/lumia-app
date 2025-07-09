@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import io from 'socket.io-client';
 //import { AuroraBackground } from '@/components/ui/aurora-background'; // uprav cestu podľa svojej štruktúry
 import { Vortex } from '@/components/ui/vortex';   // ← nový import
-import { glassClasses, cn } from '@/lib/utils';
+import { glassClasses, cn, iconButtonClasses } from '@/lib/utils';
 import { countries } from '@/lib/countries';
 import { AiOutlineGlobal } from 'react-icons/ai';
 import { MdOutlineWc } from 'react-icons/md';
@@ -62,7 +62,7 @@ export default function Home() {
           <button
             onClick={() => setCountryOpen((o) => !o)}
             aria-label="Select Country"
-            className={cn(glassClasses, 'p-2 text-black flex items-center justify-center')}
+            className={cn(glassClasses, iconButtonClasses)}
           >
             {country ? countries.find((c) => c.name === country)?.flag : <AiOutlineGlobal />}
           </button>
@@ -88,7 +88,7 @@ export default function Home() {
           <button
             onClick={() => setGenderOpen((o) => !o)}
             aria-label="Select Gender"
-            className={cn(glassClasses, 'p-2 text-black flex items-center justify-center')}
+            className={cn(glassClasses, iconButtonClasses)}
           >
             {gender === 'Male' ? '♂️' : gender === 'Female' ? '♀️' : gender === 'Other' ? '⚧' : <MdOutlineWc />}
           </button>
