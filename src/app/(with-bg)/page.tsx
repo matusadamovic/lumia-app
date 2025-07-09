@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import io from 'socket.io-client';
 //import { AuroraBackground } from '@/components/ui/aurora-background'; // uprav cestu podľa svojej štruktúry
-import { Vortex } from '@/components/ui/vortex';   // ← nový import
+// Background effect provided by layout
 import { glassClasses, cn, iconButtonClasses } from '@/lib/utils';
 import { countries } from '@/lib/countries';
 import BlurModal from '@/components/ui/BlurModal';
@@ -34,24 +34,14 @@ export default function Home() {
 
   return (
     <>
-    <Vortex
-      /* Tailwind trieda Vortexu, v ktorej držíš layout */
-      className="flex flex-col md:flex-row min-h-screen p-4 gap-8 items-center justify-center"
-      /* Tailwind trieda pre absolútny div s canvasom (voliteľné) */
-      containerClassName="bg-transparent"
-      /* príklady vlastných props – prispôsob podľa seba */
-      particleCount={700}
-      baseHue={220}          // východzia farba (modro-fialová)
-      //rangeHue={100}         // rozsah odtieňov
-      backgroundColor="#000" // farba pozadia, ak nechceš, nechaj default
-    >
-      {/* ----- tvoj pôvodný obsah stránky ----- */}
-      <div className="flex flex-col items-center justify-center flex-1 gap-4">
-        <h1 className="text-4xl font-bold">Lumia</h1>
-        <div className="text-sm text-gray-300">
-          Live online users: {online ?? '--'}
+      <div className="flex flex-col md:flex-row min-h-screen p-4 gap-8 items-center justify-center">
+        {/* ----- tvoj pôvodný obsah stránky ----- */}
+        <div className="flex flex-col items-center justify-center flex-1 gap-4">
+          <h1 className="text-4xl font-bold">Lumia</h1>
+          <div className="text-sm text-gray-300">
+            Live online users: {online ?? '--'}
+          </div>
         </div>
-      </div>
 
       <div className="flex flex-col items-center justify-center flex-1 gap-4">
         <Link
@@ -78,9 +68,9 @@ export default function Home() {
             {gender === 'Male' ? '♂️' : gender === 'Female' ? '♀️' : gender === 'Other' ? '⚧' : <MdOutlineWc />}
           </button>
         </div>
+        </div>
+        {/* --------------------------------------- */}
       </div>
-      {/* --------------------------------------- */}
-    </Vortex>
     <BlurModal open={countryOpen} onClose={() => setCountryOpen(false)}>
       <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
         {countries.map(({ code, name, flag }) => (

@@ -7,7 +7,6 @@ import Image from 'next/image';
 import { supabase, fetchMyProfile, type Profile } from '@/lib/supabaseClient';
 import { countries } from '@/lib/countries';
 import requireAuth from '@/lib/requireAuth';
-import { Vortex } from '@/components/ui/vortex';
 import { glassClasses, cn } from '@/lib/utils';
 
 function ProfilePage() {
@@ -44,19 +43,13 @@ function ProfilePage() {
     : null;
 
   return (
-    <Vortex
-      className="min-h-screen flex items-center justify-center"
-      containerClassName="bg-transparent"
-      particleCount={700}
-      baseHue={220}
-      backgroundColor="#000"
-    >
+    <div className="min-h-screen flex items-center justify-center">
       <div className={cn(glassClasses, 'p-4 max-w-md w-full flex flex-col gap-4')}>
-      <h1 className="text-2xl font-bold">Profile</h1>
-      {profile.avatar_url && (
-        <Image
-          src={profile.avatar_url}
-          alt="Avatar"
+        <h1 className="text-2xl font-bold">Profile</h1>
+        {profile.avatar_url && (
+          <Image
+            src={profile.avatar_url}
+            alt="Avatar"
           width={128}
           height={128}
           className="w-32 h-32 object-cover rounded-full border"
@@ -87,7 +80,7 @@ function ProfilePage() {
         Sign Out
       </button>
       </div>
-    </Vortex>
+    </div>
   );
 }
 
