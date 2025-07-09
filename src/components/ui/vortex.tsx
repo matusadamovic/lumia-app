@@ -65,23 +65,26 @@ export const Vortex = (props: VortexProps) => {
   /* ----------------------------- helpers -------------------------------- */
   const rand = useCallback((n: number): number => n * Math.random(), []);
   const randRange = useCallback((n: number): number => n - rand(2 * n), [rand]);
-  const fadeInOut = (t: number, m: number): number => {
+  const fadeInOut = useCallback((t: number, m: number): number => {
     const hm = 0.5 * m;
     return Math.abs(((t + hm) % m) - hm) / hm;
-  };
-  const lerp = (n1: number, n2: number, speed: number): number =>
-    (1 - speed) * n1 + speed * n2;
+  }, []);
+  const lerp = useCallback(
+    (n1: number, n2: number, speed: number): number =>
+      (1 - speed) * n1 + speed * n2,
+    [],
+  );
 
   /* ------------------------- simplex noise fn --------------------------- */
   const noise3D = useMemo(() => createNoise3D(Math.random), []);
 
   /* --------------------------- orientation ------------------------------ */
-  const isVertical = () => {
+  const isVertical = useCallback(() => {
     if (orientation === "vertical") return true;
     if (orientation === "horizontal") return false;
     // auto
     return window.innerHeight > window.innerWidth;
-  };
+  }, [orientation]);
 
   /* --------------------------- particles --------------------------------- */
   const initParticle = useCallback(
@@ -124,6 +127,7 @@ export const Vortex = (props: VortexProps) => {
       rangeRadius,
       baseHue,
       rangeHue,
+      isVertical,
     ],
   );
 
@@ -136,11 +140,11 @@ export const Vortex = (props: VortexProps) => {
     }
   }, [initParticle, particlePropCount, particlePropsLength]);
 
-  const checkBounds = (
-    x: number,
-    y: number,
-    canvas: HTMLCanvasElement,
-  ) => x > canvas.width || x < 0 || y > canvas.height || y < 0;
+  const checkBounds = useCallback(
+    (x: number, y: number, canvas: HTMLCanvasElement) =>
+      x > canvas.width || x < 0 || y > canvas.height || y < 0,
+    [],
+  );
 
   const updateParticle = useCallback(
     (i: number, ctx: CanvasRenderingContext2D) => {
@@ -237,17 +241,17 @@ export const Vortex = (props: VortexProps) => {
   );
 
   /* ------------------------------ helpers ------------------------------- */
-  const resize = (
-    canvas: HTMLCanvasElement,
-    ctx?: CanvasRenderingContext2D,
-  ) => {
-    const { innerWidth, innerHeight } = window;
-    canvas.width = innerWidth;
-    canvas.height = innerHeight;
-    center.current[0] = 0.5 * canvas.width;
-    center.current[1] = 0.5 * canvas.height;
-    ctx?.clearRect(0, 0, canvas.width, canvas.height);
-  };
+  const resize = useCallback(
+    (canvas: HTMLCanvasElement, ctx?: CanvasRenderingContext2D) => {
+      const { innerWidth, innerHeight } = window;
+      canvas.width = innerWidth;
+      canvas.height = innerHeight;
+      center.current[0] = 0.5 * canvas.width;
+      center.current[1] = 0.5 * canvas.height;
+      ctx?.clearRect(0, 0, canvas.width, canvas.height);
+    },
+    [],
+  );
 
   /* ------------------------------ main loop ------------------------------ */
   const draw = useCallback(
@@ -289,7 +293,7 @@ export const Vortex = (props: VortexProps) => {
     resize(canvas, ctx);
     initParticles();
     draw(canvas, ctx);
-  }, [draw, initParticles]);
+  }, [draw, initParticles, resize]);
 
   const handleResize = useCallback(() => {
     const canvas = canvasRef.current;
@@ -298,7 +302,7 @@ export const Vortex = (props: VortexProps) => {
       resize(canvas, ctx);
       initParticles(); // re-seed particles podľa novej orientácie
     }
-  }, [initParticles]);
+  }, [initParticles, resize]);
 
   useEffect(() => {
     setup();
