@@ -10,6 +10,7 @@ import { countries } from '@/lib/countries';
 import BlurModal from '@/components/ui/BlurModal';
 import { AiOutlineGlobal } from 'react-icons/ai';
 import { MdOutlineWc } from 'react-icons/md';
+import BlurModal from '@/components/ui/BlurModal';
 
 export default function Home() {
   const [online, setOnline] = useState<number | null>(null);
@@ -89,43 +90,37 @@ export default function Home() {
           >
             {gender === 'Male' ? '♂️' : gender === 'Female' ? '♀️' : gender === 'Other' ? '⚧' : <MdOutlineWc />}
           </button>
-          {genderOpen && (
-            <ul className="absolute z-10 mt-2 left-0 bg-white text-black rounded shadow">
-              <li>
-                <button
-                  onClick={() => {
-                    setGender('Male');
-                    setGenderOpen(false);
-                  }}
-                  className="block px-2 py-1 w-full text-left hover:bg-gray-100"
-                >
-                  ♂️
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => {
-                    setGender('Female');
-                    setGenderOpen(false);
-                  }}
-                  className="block px-2 py-1 w-full text-left hover:bg-gray-100"
-                >
-                  ♀️
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => {
-                    setGender('Other');
-                    setGenderOpen(false);
-                  }}
-                  className="block px-2 py-1 w-full text-left hover:bg-gray-100"
-                >
-                  ⚧
-                </button>
-              </li>
-            </ul>
-          )}
+          <BlurModal open={genderOpen} onClose={() => setGenderOpen(false)}>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setGender('Male');
+                  setGenderOpen(false);
+                }}
+                className="block px-2 py-1 w-full text-left hover:bg-white/20"
+              >
+                ♂️ Male
+              </button>
+              <button
+                onClick={() => {
+                  setGender('Female');
+                  setGenderOpen(false);
+                }}
+                className="block px-2 py-1 w-full text-left hover:bg-white/20"
+              >
+                ♀️ Female
+              </button>
+              <button
+                onClick={() => {
+                  setGender('Other');
+                  setGenderOpen(false);
+                }}
+                className="block px-2 py-1 w-full text-left hover:bg-white/20"
+              >
+                ⚧ Other
+              </button>
+            </div>
+          </BlurModal>
         </div>
       </div>
       {/* --------------------------------------- */}
