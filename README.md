@@ -43,3 +43,16 @@ User report counts are stored in a separate `user_reports` table. Run the script
 `supabase/create_user_reports_table.sql` to create it in your project. The API
 route requires a service role key via the `SUPABASE_SERVICE_ROLE_KEY`
 environment variable so it can update the table.
+
+## WebRTC configuration
+
+The chat feature relies on STUN and TURN servers for establishing peer
+connections. Set the URLs using `NEXT_PUBLIC_STUN_URL` and
+`NEXT_PUBLIC_TURN_URL` in your `.env` file (credentials can be provided via
+`NEXT_PUBLIC_TURN_USERNAME` and `NEXT_PUBLIC_TURN_CREDENTIAL`). The defaults
+use Google's public STUN server and the community TURN instance at
+`openrelay.metered.ca`.
+
+Public options like Google's STUN servers or the openrelay TURN service work for
+testing, but for production you may want to run your own TURN server such as
+[coturn](https://github.com/coturn/coturn).

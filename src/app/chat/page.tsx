@@ -10,11 +10,17 @@ import { useSearchParams } from "next/navigation";
 type MatchPayload = { otherId: string; initiator: boolean };
 
 const ICE_SERVERS = [
-  { urls: "stun:stun.l.google.com:19302" },
   {
-    urls: "turn:openrelay.metered.ca:80",
-    username: "openrelayproject",
-    credential: "openrelayproject",
+    urls:
+      process.env.NEXT_PUBLIC_STUN_URL ?? "stun:stun.l.google.com:19302",
+  },
+  {
+    urls:
+      process.env.NEXT_PUBLIC_TURN_URL ?? "turn:openrelay.metered.ca:80",
+    username:
+      process.env.NEXT_PUBLIC_TURN_USERNAME ?? "openrelayproject",
+    credential:
+      process.env.NEXT_PUBLIC_TURN_CREDENTIAL ?? "openrelayproject",
   },
 ];
 
