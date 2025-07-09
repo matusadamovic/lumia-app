@@ -38,3 +38,11 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## Supabase setup
 
 To store additional user information, create a `profiles` table in your Supabase project. A helper SQL script is available at `supabase/create_profiles_table.sql`.
+
+## Emoji rendering
+
+The app uses [Twemoji](https://github.com/twitter/twemoji) so that emojis render
+consistently on all devices. A subset of SVG assets is stored locally under
+`public/twemoji` and parsed on every page load. This ensures the country flags
+defined in `src/lib/countries.ts` are visible even on machines without emoji
+fonts installed.
