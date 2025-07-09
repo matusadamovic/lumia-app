@@ -24,11 +24,19 @@ export default function handler(
   const io = new IOServer(res.socket.server, { path: "/api/socket" });
   res.socket.server.io = io;
 
-  let waiting: string | null = null;
+  type Filters = { country?: string; gender?: string };
+  type WaitingUser = { id: string; filters: Filters };
+  const waiting: WaitingUser[] = [];
   const pairs = new Map<string, string>();
   const reports = new Map<string, number>();
   const REPORT_THRESHOLD = 3;
   let onlineCount = 0;
+
+  const matches = (a: Filters, b: Filters) => {
+    if (a.country && b.country && a.country !== b.country) return false;
+    if (a.gender && b.gender && a.gender !== b.gender) return false;
+    return true;
+  };
 
   io.on("connection", (socket) => {
     onlineCount++;
@@ -41,17 +49,28 @@ export default function handler(
       return;
     }
 
-    if (waiting) {
-      // máme čakača – spojme ich
-      io.to(socket.id).emit("match", { otherId: waiting, initiator: true });
-      io.to(waiting).emit("match", { otherId: socket.id, initiator: false });
-      console.log(`▶️ Párujem ${waiting} ↔ ${socket.id}`);
-      pairs.set(socket.id, waiting);
-      pairs.set(waiting, socket.id);
-      waiting = null;
+    const filters: Filters = {
+      country:
+        typeof socket.handshake.query.country === "string"
+          ? (socket.handshake.query.country as string)
+          : undefined,
+      gender:
+        typeof socket.handshake.query.gender === "string"
+          ? (socket.handshake.query.gender as string)
+          : undefined,
+    };
+
+    const idx = waiting.findIndex((w) => matches(w.filters, filters));
+    if (idx !== -1) {
+      const w = waiting.splice(idx, 1)[0];
+      io.to(socket.id).emit("match", { otherId: w.id, initiator: true });
+      io.to(w.id).emit("match", { otherId: socket.id, initiator: false });
+      console.log(`▶️ Párujem ${w.id} ↔ ${socket.id}`);
+      pairs.set(socket.id, w.id);
+      pairs.set(w.id, socket.id);
     } else {
-      waiting = socket.id;
-      console.log(`⌛ Čakám na ďalšieho používateľa… (${waiting})`);
+      waiting.push({ id: socket.id, filters });
+      console.log(`⌛ Čakám na ďalšieho používateľa… (${socket.id})`);
     }
 
     socket.on("signal", ({ to, data }) => io.to(to).emit("signal", data));
@@ -74,7 +93,8 @@ export default function handler(
     });
 
     socket.on("disconnect", () => {
-      if (waiting === socket.id) waiting = null;
+      const idx = waiting.findIndex((w) => w.id === socket.id);
+      if (idx !== -1) waiting.splice(idx, 1);
 
       const partner = pairs.get(socket.id);
       if (partner) {

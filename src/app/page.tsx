@@ -6,10 +6,13 @@ import io from 'socket.io-client';
 //import { AuroraBackground } from '@/components/ui/aurora-background'; // uprav cestu podľa svojej štruktúry
 import { Vortex } from '@/components/ui/vortex';   // ← nový import
 import { glassClasses, cn } from '@/lib/utils';
+import { countries } from '@/lib/countries';
 
 export default function Home() {
   const [online, setOnline] = useState<number | null>(null);
   const socketRef = useRef<ReturnType<typeof io> | null>(null);
+  const [country, setCountry] = useState('');
+  const [gender, setGender] = useState('');
 
   useEffect(() => {
     const socket = io({ path: '/api/socket' });
@@ -45,16 +48,36 @@ export default function Home() {
       </div>
 
       <div className="flex flex-col items-center justify-center flex-1 gap-4">
-        <Link href="/chat" className={cn(glassClasses, 'px-4 py-2')}
+        <Link
+          href={`/chat?country=${encodeURIComponent(country)}&gender=${encodeURIComponent(gender)}`}
+          className={cn(glassClasses, 'px-4 py-2')}
         >
           Start Videochat
         </Link>
-        <button className={cn(glassClasses, 'px-4 py-2')}>
-          Select Country
-        </button>
-        <button className={cn(glassClasses, 'px-4 py-2')}>
-          Select Gender
-        </button>
+        <select
+          value={country}
+          onChange={(e) => setCountry(e.target.value)}
+          className={cn(glassClasses, 'px-4 py-2 text-black')}
+        >
+          <option value="" disabled>
+            Select Country
+          </option>
+          {countries.map(({ code, name, flag }) => (
+            <option key={code} value={name}>{`${flag} ${name}`}</option>
+          ))}
+        </select>
+        <select
+          value={gender}
+          onChange={(e) => setGender(e.target.value)}
+          className={cn(glassClasses, 'px-4 py-2 text-black')}
+        >
+          <option value="" disabled>
+            Select Gender
+          </option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
       </div>
       {/* --------------------------------------- */}
     </Vortex>

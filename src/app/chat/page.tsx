@@ -5,6 +5,7 @@ import io from "socket.io-client";
 import SimplePeer, { SignalData } from "simple-peer";
 import { MdSend, MdSwipe, MdNavigateNext, MdOutlineLocalPolice } from "react-icons/md";
 import requireAuth from "@/lib/requireAuth";
+import { useSearchParams } from "next/navigation";
 
 type MatchPayload = { otherId: string; initiator: boolean };
 
@@ -38,10 +39,17 @@ function ChatPage() {
   >([]);
   const [newMessage, setNewMessage] = useState("");
 
+  const searchParams = useSearchParams();
+  const filterCountry = searchParams.get("country") || "";
+  const filterGender = searchParams.get("gender") || "";
+
   /* ───── Socket setup ───── */
   function connectSocket() {
     setNextEnabled(false);
-    const socket = io({ path: "/api/socket" });
+    const socket = io({
+      path: "/api/socket",
+      query: { country: filterCountry, gender: filterGender },
+    });
     socketRef.current = socket;
 
     socket.on("match", ({ otherId, initiator }: MatchPayload) => {
