@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { AiOutlineEdit, AiOutlineLogout } from 'react-icons/ai';
 import { supabase, fetchMyProfile, type Profile } from '@/lib/supabaseClient';
 import { countries } from '@/lib/countries';
 import requireAuth from '@/lib/requireAuth';
@@ -44,7 +45,12 @@ function ProfilePage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className={cn(glassClasses, 'p-4 max-w-md w-full flex flex-col gap-4')}>
+      <div
+        className={cn(
+          glassClasses,
+          'p-4 max-w-md w-full flex flex-col items-center gap-4 text-center'
+        )}
+      >
         <h1 className="text-2xl font-bold">Profile</h1>
         {profile.avatar_url && (
           <Image
@@ -55,12 +61,11 @@ function ProfilePage() {
           className="w-32 h-32 object-cover rounded-full border"
         />
       )}
-      <p>Email: {user.email}</p>
-      <p>Nickname: {profile.nickname ?? '-'}</p>
-      <p>Birthdate: {profile.birthdate ?? '-'}</p>
-      <p>Gender: {profile.gender ?? '-'}</p>
+      <p>{user.email}</p>
+      <p>{profile.nickname ?? '-'}</p>
+      <p>{profile.birthdate ?? '-'}</p>
+      <p>{profile.gender ?? '-'}</p>
       <p>
-        Location:{' '}
         {profile.location
           ? locationInfo
             ? `${locationInfo.flag} ${locationInfo.name}`
@@ -69,15 +74,17 @@ function ProfilePage() {
       </p>
       <button
         onClick={() => router.push('/profile/edit')}
-        className="bg-blue-600 text-white rounded px-4 py-2 w-fit"
+        className="bg-blue-600 text-white rounded-full p-2 w-fit"
+        aria-label="Edit profile"
       >
-        Edit Profile
+        <AiOutlineEdit size={24} />
       </button>
       <button
         onClick={handleSignOut}
-        className="bg-red-600 text-white rounded px-4 py-2 w-fit"
+        className="bg-red-600 text-white rounded-full p-2 w-fit"
+        aria-label="Sign out"
       >
-        Sign Out
+        <AiOutlineLogout size={24} />
       </button>
       </div>
     </div>
