@@ -29,11 +29,6 @@ export default function NavBar() {
       <Link href="/" aria-label="Home">
         <AiFillHome className="w-6 h-6" />
       </Link>
-
-      <Link href="/chat" aria-label="Chat">
-        <AiOutlineMessage className="w-6 h-6" />
-      </Link>
-
       <Link href="/spravy" aria-label="Správy">
         <AiOutlineMessage className="w-6 h-6" />
       </Link>
