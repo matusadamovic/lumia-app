@@ -2,6 +2,12 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { Server as IOServer } from "socket.io";
 import type { Server as HttpServer } from "http";
 import type { Socket as NetSocket } from "net";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
 
 export const config = { api: { bodyParser: false } };
 
@@ -38,15 +44,27 @@ export default function handler(
     return true;
   };
 
-  io.on("connection", (socket) => {
+  io.on("connection", async (socket) => {
     onlineCount++;
     io.emit("online-count", onlineCount);
     console.log("🆕 spojenie:", socket.id);
 
-    if ((reports.get(socket.id) ?? 0) >= REPORT_THRESHOLD) {
-      console.log(`⛔ Blocked user attempted connection: ${socket.id}`);
-      socket.disconnect();
-      return;
+    try {
+      const { data, error } = await supabase
+        .from("user_reports")
+        .select("count")
+        .eq("id", socket.id)
+        .maybeSingle();
+      if (error) console.error("Error loading reports", error);
+      const dbCount = data?.count ?? 0;
+      reports.set(socket.id, dbCount);
+      if (dbCount >= REPORT_THRESHOLD) {
+        console.log(`⛔ Blocked user attempted connection: ${socket.id}`);
+        socket.disconnect();
+        return;
+      }
+    } catch (err) {
+      console.error("DB check failed", err);
     }
 
     const filters: Filters = {
@@ -80,10 +98,25 @@ export default function handler(
       if (partner) io.to(partner).emit("chat-message", msg);
     });
 
-    socket.on("report-user", (id: string) => {
-      const count = (reports.get(id) ?? 0) + 1;
+    socket.on("report-user", async (id: string) => {
+      let count = reports.get(id);
+      if (count === undefined) {
+        const { data, error } = await supabase
+          .from("user_reports")
+          .select("count")
+          .eq("id", id)
+          .maybeSingle();
+        if (error) console.error("Error reading report", error);
+        count = data?.count ?? 0;
+      }
+      count++;
       reports.set(id, count);
       console.log(`\uD83D\uDEA8 Report on ${id}: ${count}`);
+
+      const { error: upsertError } = await supabase
+        .from("user_reports")
+        .upsert({ id, count });
+      if (upsertError) console.error("Error updating report", upsertError);
 
       if (count >= REPORT_THRESHOLD) {
         const target = io.sockets.sockets.get(id);

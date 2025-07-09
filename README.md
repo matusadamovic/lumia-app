@@ -38,3 +38,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## Supabase setup
 
 To store additional user information, create a `profiles` table in your Supabase project. A helper SQL script is available at `supabase/create_profiles_table.sql`.
+
+User report counts are stored in a separate `user_reports` table. Run the script
+`supabase/create_user_reports_table.sql` to create it in your project. The API
+route requires a service role key via the `SUPABASE_SERVICE_ROLE_KEY`
+environment variable so it can update the table.
