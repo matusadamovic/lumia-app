@@ -11,7 +11,6 @@ import {
 } from '@/lib/supabaseClient';
 import { countries } from '@/lib/countries';
 import requireAuth from '@/lib/requireAuth';
-import { Vortex } from '@/components/ui/vortex';
 import { glassClasses, cn } from '@/lib/utils';
 
 function EditProfilePage() {
@@ -83,13 +82,7 @@ function EditProfilePage() {
   if (!profile) return <p className="p-4">No profile found.</p>;
 
   return (
-    <Vortex
-      className="min-h-screen flex items-center justify-center"
-      containerClassName="bg-transparent"
-      particleCount={700}
-      baseHue={220}
-      backgroundColor="#000"
-    >
+    <div className="min-h-screen flex items-center justify-center">
       <div className={cn(glassClasses, 'p-4 max-w-md w-full')}>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col items-center gap-2">
@@ -156,7 +149,7 @@ function EditProfilePage() {
           </button>
         </form>
       </div>
-    </Vortex>
+    </div>
   );
 }
 
