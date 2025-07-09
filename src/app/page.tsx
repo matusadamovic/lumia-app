@@ -63,7 +63,7 @@ export default function Home() {
             Select Country
           </option>
           {countries.map(({ code, name, flag }) => (
-            <option key={code} value={name}>{`${flag} ${name}`}</option>
+            <option key={code} value={name}>{flag}</option>
           ))}
         </select>
         <select
@@ -74,9 +74,9 @@ export default function Home() {
           <option value="" disabled>
             Select Gender
           </option>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-          <option value="Other">Other</option>
+          <option value="Male">♂️</option>
+          <option value="Female">♀️</option>
+          <option value="Other">⚧</option>
         </select>
       </div>
       {/* --------------------------------------- */}
