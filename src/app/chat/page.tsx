@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, type FormEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  type FormEvent,
+} from "react";
 import io from "socket.io-client";
 import SimplePeer, { SignalData } from "simple-peer";
 import { MdSend, MdSwipe, MdNavigateNext, MdOutlineLocalPolice } from "react-icons/md";
@@ -45,9 +51,18 @@ function ChatPage() {
   >([]);
   const [newMessage, setNewMessage] = useState("");
 
+  const [panelVisible, setPanelVisible] = useState(true);
+  const hideTimer = useRef<NodeJS.Timeout | null>(null);
+
   const searchParams = useSearchParams();
   const filterCountry = searchParams?.get("country") || "";
   const filterGender  = searchParams?.get("gender")  || "";
+
+  function showPanel(ms = 5000) {
+    setPanelVisible(true);
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(() => setPanelVisible(false), ms);
+  }
 
   /* ───── Socket setup ───── */
   function connectSocket() {
@@ -139,6 +154,10 @@ function ChatPage() {
     if (localVideoRef.current)
       localVideoRef.current.srcObject = null;
     localStreamRef.current = null;
+    if (hideTimer.current) {
+      clearTimeout(hideTimer.current);
+      hideTimer.current = null;
+    }
     setMessages([]);
     setNewMessage("");
   }, []);
@@ -165,6 +184,7 @@ function ChatPage() {
         remoteVideoRef.current.playsInline = true;
       }
       setStatus("Video pripojené 🎉");
+      showPanel();
     });
     peer.on("error", (e) => {
       console.error("peer error", e);
@@ -209,7 +229,10 @@ function ChatPage() {
   /* ───── UI ───── */
   return (
     <div className="h-screen w-full flex flex-col">
-      <div className="relative flex flex-col md:flex-row flex-1">
+      <div
+        className="relative flex flex-col md:flex-row flex-1"
+        onClick={() => showPanel()}
+      >
         {/* partner video */}
         <div className="flex-1 relative bg-black overflow-hidden">
           <video
@@ -277,7 +300,9 @@ function ChatPage() {
         </div>
 
         {/* action panel */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex items-center gap-3 md:flex-col md:gap-2 bg-white/20 backdrop-blur-md border border-white/30 text-white px-4 py-2 rounded-2xl">
+        <div
+          className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex items-center gap-3 md:flex-col md:gap-2 bg-white/20 backdrop-blur-md border border-white/30 text-white px-4 py-2 rounded-2xl transition-opacity ${panelVisible ? "" : "opacity-0 pointer-events-none"}`}
+        >
           {!started ? (
             <button
               onClick={handleStart}
