@@ -56,10 +56,11 @@ function ChatPage() {
   const [panelVisible, setPanelVisible] = useState(true);
   const hideTimer = useRef<NodeJS.Timeout | null>(null);
 
+  const [dragOffset, setDragOffset] = useState(0);
   const [isSwipeAnimating, setIsSwipeAnimating] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const touchStartY = useRef<number | null>(null);
-  const touchEndY = useRef<number | null>(null);
 
   const searchParams = useSearchParams();
   const filterCountry = searchParams?.get("country") || "";
@@ -226,28 +227,34 @@ function ChatPage() {
 
   function handleTouchStart(e: React.TouchEvent<HTMLDivElement>) {
     touchStartY.current = e.touches[0].clientY;
+    setIsDragging(true);
+  }
+
+  function handleTouchMove(e: React.TouchEvent<HTMLDivElement>) {
+    if (!isDragging || touchStartY.current === null) return;
+    const delta = touchStartY.current - e.touches[0].clientY;
+    setDragOffset(delta > 0 ? -delta : 0);
   }
 
   function handleTouchEnd(e: React.TouchEvent<HTMLDivElement>) {
-    touchEndY.current = e.changedTouches[0].clientY;
-    if (
-      touchStartY.current !== null &&
-      touchEndY.current !== null &&
-      touchStartY.current - touchEndY.current > 50
-    ) {
-      e.preventDefault();
+    if (touchStartY.current === null) return;
+    const delta = touchStartY.current - e.changedTouches[0].clientY;
+    const height = containerRef.current?.clientHeight || window.innerHeight;
+    if (delta > 50) {
+      setDragOffset(-height);
       setIsSwipeAnimating(true);
     } else {
-      e.preventDefault();
+      setDragOffset(0);
       showPanel();
     }
     touchStartY.current = null;
-    touchEndY.current = null;
+    setIsDragging(false);
   }
 
-  function handleAnimationEnd() {
+  function handleTransitionEnd() {
     if (isSwipeAnimating) {
       setIsSwipeAnimating(false);
+      setDragOffset(0);
       nextPartner();
     }
   }
@@ -266,11 +273,17 @@ function ChatPage() {
     <div className="h-screen w-full flex flex-col">
       <div
         ref={containerRef}
-        className={`relative flex flex-col md:flex-row flex-1 ${isSwipeAnimating ? "animate-swipe-up" : ""}`}
+        style={{
+          transform: `translateY(${dragOffset}px)`,
+          transition: isSwipeAnimating || !isDragging ? "transform 0.3s ease-out, opacity 0.3s ease-out" : "none",
+          opacity: isSwipeAnimating ? 0 : 1,
+        }}
+        className="relative flex flex-col md:flex-row flex-1"
         onClick={() => showPanel()}
         onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onAnimationEnd={handleAnimationEnd}
+        onTransitionEnd={handleTransitionEnd}
       >
         {/* partner video */}
         <div className="flex-1 relative bg-black overflow-hidden">
