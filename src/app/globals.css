@@ -14,4 +14,20 @@
         350% 50%;
     }
   }
+  @keyframes swipe-up {
+    from {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+  }
+}
+
+@layer utilities {
+  .animate-swipe-up {
+    animation: swipe-up 0.4s ease-out forwards;
+  }
 }

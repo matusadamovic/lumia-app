@@ -35,6 +35,8 @@ function ChatPage() {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
   const peerRef = useRef<SimplePeer.Instance | null>(null);
   const socketRef = useRef<ReturnType<typeof io> | null>(null);
 
@@ -53,6 +55,8 @@ function ChatPage() {
 
   const [panelVisible, setPanelVisible] = useState(true);
   const hideTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const [isSwipeAnimating, setIsSwipeAnimating] = useState(false);
 
   const touchStartY = useRef<number | null>(null);
   const touchEndY = useRef<number | null>(null);
@@ -232,13 +236,20 @@ function ChatPage() {
       touchStartY.current - touchEndY.current > 50
     ) {
       e.preventDefault();
-      nextPartner();
+      setIsSwipeAnimating(true);
     } else {
       e.preventDefault();
       showPanel();
     }
     touchStartY.current = null;
     touchEndY.current = null;
+  }
+
+  function handleAnimationEnd() {
+    if (isSwipeAnimating) {
+      setIsSwipeAnimating(false);
+      nextPartner();
+    }
   }
 
   function sendMessage(e: FormEvent) {
@@ -254,10 +265,12 @@ function ChatPage() {
   return (
     <div className="h-screen w-full flex flex-col">
       <div
-        className="relative flex flex-col md:flex-row flex-1"
+        ref={containerRef}
+        className={`relative flex flex-col md:flex-row flex-1 ${isSwipeAnimating ? "animate-swipe-up" : ""}`}
         onClick={() => showPanel()}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
+        onAnimationEnd={handleAnimationEnd}
       >
         {/* partner video */}
         <div className="flex-1 relative bg-black overflow-hidden">
