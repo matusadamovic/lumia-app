@@ -9,7 +9,18 @@ import { glassClasses, cn, iconButtonClasses } from '@/lib/utils';
 import { countries } from '@/lib/countries';
 import BlurModal from '@/components/ui/BlurModal';
 import { AiOutlineGlobal } from 'react-icons/ai';
-import { MdOutlineWc } from 'react-icons/md';
+import {
+  MdOutlineWc,
+  MdSportsEsports,
+  MdPlaylistAddCheck,
+} from 'react-icons/md';
+
+const gameTitles = [
+  'Truth or Dare',
+  'Guess Who Am I',
+  'Would You Rather',
+  'Never Have I Ever',
+];
 
 export default function Home() {
   const [online, setOnline] = useState<number | null>(null);
@@ -18,6 +29,9 @@ export default function Home() {
   const [gender, setGender] = useState('');
   const [countryOpen, setCountryOpen] = useState(false);
   const [genderOpen, setGenderOpen] = useState(false);
+  const [gameMode, setGameMode] = useState(false);
+  const [gamesOpen, setGamesOpen] = useState(false);
+  const [selectedGames, setSelectedGames] = useState<string[]>([]);
 
   useEffect(() => {
     const socket = io({ path: '/api/socket' });
@@ -51,7 +65,7 @@ export default function Home() {
 
       <div className="flex flex-col items-center justify-center flex-1 gap-4">
         <Link
-          href={`/chat?country=${encodeURIComponent(country)}&gender=${encodeURIComponent(gender)}`}
+          href={`/chat?country=${encodeURIComponent(country)}&gender=${encodeURIComponent(gender)}&gameMode=${gameMode ? 1 : 0}&games=${selectedGames.join(',')}`}
           className={cn(glassClasses, 'px-4 py-2')}
         >
           Start Videochat
@@ -74,6 +88,29 @@ export default function Home() {
             {gender === 'Male' ? '♂️' : gender === 'Female' ? '♀️' : gender === 'Other' ? '⚧' : <MdOutlineWc />}
           </button>
         </div>
+        <div>
+          <button
+            onClick={() => setGameMode((g) => !g)}
+            aria-label="Toggle Game Mode"
+            className={cn(glassClasses, iconButtonClasses, gameMode && 'bg-white/40')}
+          >
+            <MdSportsEsports />
+          </button>
+        </div>
+        <div className="relative">
+          <button
+            onClick={() => setGamesOpen(true)}
+            aria-label="Select Games"
+            className={cn(glassClasses, iconButtonClasses, 'relative')}
+          >
+            <MdPlaylistAddCheck />
+            {selectedGames.length > 0 && (
+              <span className="absolute -top-1 -right-1 text-xs bg-red-500 rounded-full px-1">
+                {selectedGames.length}
+              </span>
+            )}
+          </button>
+        </div>
         </div>
         {/* --------------------------------------- */}
       </div>
@@ -91,6 +128,26 @@ export default function Home() {
             <span className="text-xl">{flag}</span>
             {name}
           </button>
+        ))}
+      </div>
+    </BlurModal>
+    <BlurModal open={gamesOpen} onClose={() => setGamesOpen(false)}>
+      <div className="flex flex-col gap-2">
+        {gameTitles.map((title) => (
+          <label key={title} className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={selectedGames.includes(title)}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setSelectedGames((prev) => [...prev, title]);
+                } else {
+                  setSelectedGames((prev) => prev.filter((t) => t !== title));
+                }
+              }}
+            />
+            {title}
+          </label>
         ))}
       </div>
     </BlurModal>
