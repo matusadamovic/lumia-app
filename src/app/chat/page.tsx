@@ -54,6 +54,9 @@ function ChatPage() {
   const [panelVisible, setPanelVisible] = useState(true);
   const hideTimer = useRef<NodeJS.Timeout | null>(null);
 
+  const touchStartY = useRef<number | null>(null);
+  const touchEndY = useRef<number | null>(null);
+
   const searchParams = useSearchParams();
   const filterCountry = searchParams?.get("country") || "";
   const filterGender  = searchParams?.get("gender")  || "";
@@ -217,6 +220,27 @@ function ChatPage() {
     setHasReported(true);
   }
 
+  function handleTouchStart(e: React.TouchEvent<HTMLDivElement>) {
+    touchStartY.current = e.touches[0].clientY;
+  }
+
+  function handleTouchEnd(e: React.TouchEvent<HTMLDivElement>) {
+    touchEndY.current = e.changedTouches[0].clientY;
+    if (
+      touchStartY.current !== null &&
+      touchEndY.current !== null &&
+      touchStartY.current - touchEndY.current > 50
+    ) {
+      e.preventDefault();
+      nextPartner();
+    } else {
+      e.preventDefault();
+      showPanel();
+    }
+    touchStartY.current = null;
+    touchEndY.current = null;
+  }
+
   function sendMessage(e: FormEvent) {
     e.preventDefault();
     const msg = newMessage.trim();
@@ -232,6 +256,8 @@ function ChatPage() {
       <div
         className="relative flex flex-col md:flex-row flex-1"
         onClick={() => showPanel()}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         {/* partner video */}
         <div className="flex-1 relative bg-black overflow-hidden">
