@@ -14,6 +14,7 @@ import {
   MdSportsEsports,
   MdPlaylistAddCheck,
 } from 'react-icons/md';
+import IconSwitch from '@/components/ui/IconSwitch';
 
 const gameTitles = [
   'Truth or Dare',
@@ -89,13 +90,12 @@ export default function Home() {
           </button>
         </div>
         <div>
-          <button
-            onClick={() => setGameMode((g) => !g)}
-            aria-label="Toggle Game Mode"
-            className={cn(glassClasses, iconButtonClasses, gameMode && 'bg-white/40')}
-          >
-            <MdSportsEsports />
-          </button>
+          <IconSwitch
+            checked={gameMode}
+            onChange={setGameMode}
+            icon={<MdSportsEsports className="text-xs" />}
+            className={cn(glassClasses)}
+          />
         </div>
         <div className="relative">
           <button
