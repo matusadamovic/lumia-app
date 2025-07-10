@@ -59,6 +59,7 @@ function ChatPage() {
   const [dragOffset, setDragOffset] = useState(0);
   const [isSwipeAnimating, setIsSwipeAnimating] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [swipeStage, setSwipeStage] = useState<"up" | "down" | null>(null);
 
   const touchStartY = useRef<number | null>(null);
 
@@ -243,6 +244,7 @@ function ChatPage() {
     if (delta > 50) {
       setDragOffset(-height);
       setIsSwipeAnimating(true);
+      setSwipeStage("up");
       nextPartner();
     } else {
       setDragOffset(0);
@@ -253,8 +255,17 @@ function ChatPage() {
   }
 
   function handleTransitionEnd() {
-    if (isSwipeAnimating) {
-      setIsSwipeAnimating(false);
+    if (!swipeStage) return;
+    const height = containerRef.current?.clientHeight || window.innerHeight;
+    if (swipeStage === "up") {
+      setSwipeStage("down");
+      setDragOffset(height);
+      requestAnimationFrame(() => {
+        setIsSwipeAnimating(false);
+        setDragOffset(0);
+      });
+    } else {
+      setSwipeStage(null);
       setDragOffset(0);
     }
   }
