@@ -217,6 +217,9 @@ function ChatPage() {
             autoPlay
             className="w-full h-full object-cover"
           />
+          <div className="absolute bottom-2 right-2 text-white text-xs opacity-70 pointer-events-none select-none">
+            LUMIA
+          </div>
           <div className="absolute inset-0 flex items-center justify-center text-white text-sm bg-black/30 pointer-events-none">
             {status}
           </div>
