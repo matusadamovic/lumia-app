@@ -243,6 +243,7 @@ function ChatPage() {
     if (delta > 50) {
       setDragOffset(-height);
       setIsSwipeAnimating(true);
+      nextPartner();
     } else {
       setDragOffset(0);
       showPanel();
@@ -255,7 +256,6 @@ function ChatPage() {
     if (isSwipeAnimating) {
       setIsSwipeAnimating(false);
       setDragOffset(0);
-      nextPartner();
     }
   }
 
@@ -270,7 +270,7 @@ function ChatPage() {
 
   /* ───── UI ───── */
   return (
-    <div className="h-screen w-full flex flex-col">
+    <div className="h-screen w-full flex flex-col bg-black">
       <div
         ref={containerRef}
         style={{
