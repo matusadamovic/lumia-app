@@ -294,9 +294,16 @@ function ChatPage() {
 
   function cleanupPeer() {
     console.log("🧹 cleanupPeer");
-    peerRef.current?.destroy();
+    if (peerRef.current) {
+      peerRef.current.removeAllListeners();
+      peerRef.current.destroy();
+      peerRef.current = null;
+    }
     socketRef.current?.disconnect();
-    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = null;
+      remoteVideoRef.current = null;
+    }
     remoteStreamRef.current = null;
     setPartnerId(null);
     setHasReported(false);
@@ -384,9 +391,12 @@ useEffect(() => {
   /*  UI Handlery                               */
   /* ─────────────────────────────────────────── */
 
-function nextPartner() {
+async function nextPartner() {
   console.log("➡️ nextPartner");
   cleanupPeer();
+  if (!localStreamRef.current) {
+    await startCamera();
+  }
   connectSocket();
 
   /* reset UI stavov… */
