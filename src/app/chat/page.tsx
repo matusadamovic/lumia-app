@@ -147,6 +147,7 @@ function ChatPage() {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
+  const remoteStreamRef = useRef<MediaStream | null>(null);
 
   /* socket & peer refs */
   const peerRef = useRef<SimplePeer.Instance | null>(null);
@@ -283,6 +284,7 @@ function ChatPage() {
     peerRef.current?.destroy();
     socketRef.current?.disconnect();
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    remoteStreamRef.current = null;
     setPartnerId(null);
     setHasReported(false);
     setMessages([]);
@@ -295,6 +297,7 @@ function ChatPage() {
     ls?.getTracks().forEach((t) => t.stop());
     if (localVideoRef.current) localVideoRef.current.srcObject = null;
     localStreamRef.current = null;
+    remoteStreamRef.current = null;
     if (hideTimer.current) {
       clearTimeout(hideTimer.current);
       hideTimer.current = null;
@@ -323,10 +326,8 @@ function ChatPage() {
       socketRef.current?.emit("signal", { to: otherId, data: sig })
     );
     peer.on("track", (_t, s) => {
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = s;
-        remoteVideoRef.current.playsInline = true;
-      }
+      remoteStreamRef.current = s;
+      attachRemoteStream(s);
       setStatus("Video pripojené 🎉");
       showPanel();
     });
@@ -343,6 +344,12 @@ function ChatPage() {
     localVideoRef.current.playsInline = true;
   }
 
+  function attachRemoteStream(s: MediaStream) {
+    if (!remoteVideoRef.current) return;
+    remoteVideoRef.current.srcObject = s;
+    remoteVideoRef.current.playsInline = true;
+  }
+
 /*  tesne za definíciu attachLocalStream()  */
 useEffect(() => {
   // keď pribudne/ubudne karta, ref ukazuje na nový <video>
@@ -350,6 +357,12 @@ useEffect(() => {
     attachLocalStream(localStreamRef.current);
   }
 }, [cards]);          // spustí sa po každej zmene cards
+
+useEffect(() => {
+  if (remoteVideoRef.current && remoteStreamRef.current) {
+    attachRemoteStream(remoteStreamRef.current);
+  }
+}, [cards]);
 
   /* ─────────────────────────────────────────── */
   /*  UI Handlery                               */
