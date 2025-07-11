@@ -147,7 +147,7 @@ function ChatPage() {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
-  const remoteStreamRef = useRef<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
 
   /* socket & peer refs */
   const peerRef = useRef<SimplePeer.Instance | null>(null);
@@ -290,7 +290,7 @@ function ChatPage() {
     peerRef.current?.destroy();
     socketRef.current?.disconnect();
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
-    remoteStreamRef.current = null;
+    setRemoteStream(null);
     setPartnerId(null);
     setHasReported(false);
     setMessages([]);
@@ -334,7 +334,7 @@ function ChatPage() {
     );
     peer.on("track", (_t, s) => {
       console.log("🎥 remote track", s);
-      remoteStreamRef.current = s;
+      setRemoteStream(s);
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = s;
         remoteVideoRef.current.playsInline = true;
@@ -364,11 +364,18 @@ useEffect(() => {
   if (localVideoRef.current && localStreamRef.current) {
     attachLocalStream(localStreamRef.current);
   }
-  if (remoteVideoRef.current && remoteStreamRef.current) {
-    remoteVideoRef.current.srcObject = remoteStreamRef.current;
+  if (remoteVideoRef.current && remoteStream) {
+    remoteVideoRef.current.srcObject = remoteStream;
     remoteVideoRef.current.playsInline = true;
   }
 }, [cards]); // spustí sa po každej zmene cards
+
+useEffect(() => {
+  if (remoteVideoRef.current && remoteStream) {
+    remoteVideoRef.current.srcObject = remoteStream;
+    remoteVideoRef.current.playsInline = true;
+  }
+}, [remoteStream]);
 
   /* ─────────────────────────────────────────── */
   /*  UI Handlery                               */
