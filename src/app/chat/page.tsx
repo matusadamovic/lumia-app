@@ -208,9 +208,11 @@ function ChatPage() {
       path: "/api/socket",
       query: { country: filterCountry, gender: filterGender },
     });
+    console.log("📡 connecting socket", { country: filterCountry, gender: filterGender });
     socketRef.current = socket;
 
     socket.on("match", ({ otherId, initiator }: MatchPayload) => {
+      console.log("🎯 match", { otherId, initiator });
       setStatus("Partner nájdený, pripájam…");
       setPartnerId(otherId);
       setHasReported(false);
@@ -226,6 +228,7 @@ function ChatPage() {
     });
 
     socket.on("partner-left", () => {
+      console.log("👋 partner-left");
       nextPartner();
     });
 
@@ -242,6 +245,7 @@ function ChatPage() {
   /* ─────────────────────────────────────────── */
 
   async function startCamera() {
+    console.log("🎥 startCamera");
     if (localStreamRef.current) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -269,6 +273,7 @@ function ChatPage() {
   }
 
   async function handleStart() {
+    console.log("▶️ handleStart");
     await startCamera();
     connectSocket();
     setStatus("Čakám na partnera…");
@@ -280,6 +285,7 @@ function ChatPage() {
   /* ─────────────────────────────────────────── */
 
   function cleanupPeer() {
+    console.log("🧹 cleanupPeer");
     peerRef.current?.destroy();
     socketRef.current?.disconnect();
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
@@ -290,6 +296,7 @@ function ChatPage() {
   }
 
   const cleanupFull = useCallback(() => {
+    console.log("🧹 cleanupFull");
     cleanupPeer();
     const ls = localVideoRef.current?.srcObject as MediaStream | null;
     ls?.getTracks().forEach((t) => t.stop());
@@ -310,6 +317,7 @@ function ChatPage() {
   /* ─────────────────────────────────────────── */
 
   async function startPeer(otherId: string, initiator: boolean) {
+    console.log("🚀 startPeer", { otherId, initiator });
     const stream = localStreamRef.current ?? new MediaStream();
     const peer = new SimplePeer({
       initiator,
@@ -323,9 +331,13 @@ function ChatPage() {
       socketRef.current?.emit("signal", { to: otherId, data: sig })
     );
     peer.on("track", (_t, s) => {
+      console.log("🎥 remote track", s);
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = s;
         remoteVideoRef.current.playsInline = true;
+        console.log("📺 attached remote stream", remoteVideoRef.current);
+      } else {
+        console.log("⚠️ remoteVideoRef missing when track received");
       }
       setStatus("Video pripojené 🎉");
       showPanel();
@@ -356,6 +368,7 @@ useEffect(() => {
   /* ─────────────────────────────────────────── */
 
 function nextPartner() {
+  console.log("➡️ nextPartner");
   cleanupPeer();
   connectSocket();
 
@@ -408,6 +421,7 @@ function nextPartner() {
     e.preventDefault();
     const msg = newMessage.trim();
     if (!msg || !socketRef.current) return;
+    console.log("💬 sendMessage", msg);
     socketRef.current.emit("chat-message", msg);
     setMessages((m) => [...m, { self: true, text: msg }]);
     setNewMessage("");
