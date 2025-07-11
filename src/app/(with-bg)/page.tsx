@@ -35,7 +35,7 @@ export default function Home() {
   const [selectedGames, setSelectedGames] = useState<string[]>([]);
 
   useEffect(() => {
-    const socket = io({ path: '/api/socket' });
+    const socket = io({ path: '/api/socket', query: { purpose: 'count' } });
     socketRef.current = socket;
 
     const handleCount = (count: number) => setOnline(count);
