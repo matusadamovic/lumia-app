@@ -147,6 +147,7 @@ function ChatPage() {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
+  const remoteStreamRef = useRef<MediaStream | null>(null);
 
   /* socket & peer refs */
   const peerRef = useRef<SimplePeer.Instance | null>(null);
@@ -289,6 +290,7 @@ function ChatPage() {
     peerRef.current?.destroy();
     socketRef.current?.disconnect();
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    remoteStreamRef.current = null;
     setPartnerId(null);
     setHasReported(false);
     setMessages([]);
@@ -332,6 +334,7 @@ function ChatPage() {
     );
     peer.on("track", (_t, s) => {
       console.log("🎥 remote track", s);
+      remoteStreamRef.current = s;
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = s;
         remoteVideoRef.current.playsInline = true;
@@ -357,11 +360,15 @@ function ChatPage() {
 
 /*  tesne za definíciu attachLocalStream()  */
 useEffect(() => {
-  // keď pribudne/ubudne karta, ref ukazuje na nový <video>
+  // keď pribudne/ubudne karta, ref ukazuje na nové <video>
   if (localVideoRef.current && localStreamRef.current) {
     attachLocalStream(localStreamRef.current);
   }
-}, [cards]);          // spustí sa po každej zmene cards
+  if (remoteVideoRef.current && remoteStreamRef.current) {
+    remoteVideoRef.current.srcObject = remoteStreamRef.current;
+    remoteVideoRef.current.playsInline = true;
+  }
+}, [cards]); // spustí sa po každej zmene cards
 
   /* ─────────────────────────────────────────── */
   /*  UI Handlery                               */
