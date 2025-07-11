@@ -1,75 +1,196 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
-  useCallback,
   type FormEvent,
 } from "react";
 import io from "socket.io-client";
 import SimplePeer, { SignalData } from "simple-peer";
-import { MdSend, MdSwipe, MdNavigateNext, MdOutlineLocalPolice } from "react-icons/md";
+import {
+  MdSend,
+  MdSwipe,
+  MdNavigateNext,
+  MdOutlineLocalPolice,
+} from "react-icons/md";
 import requireAuth from "@/lib/requireAuth";
 import { useSearchParams } from "next/navigation";
+import { AnimatePresence, motion, Transition,  } from "framer-motion";
+
+/* ──────────────────────────────────────────────── */
+/*  Typy a konštanty                              */
+/* ──────────────────────────────────────────────── */
 
 type MatchPayload = { otherId: string; initiator: boolean };
 
 const ICE_SERVERS = [
   {
-    urls:
-      process.env.NEXT_PUBLIC_STUN_URL ?? "stun:stun.l.google.com:19302",
+    urls: process.env.NEXT_PUBLIC_STUN_URL ?? "stun:stun.l.google.com:19302",
   },
   {
-    urls:
-      process.env.NEXT_PUBLIC_TURN_URL ?? "turn:openrelay.metered.ca:80",
-    username:
-      process.env.NEXT_PUBLIC_TURN_USERNAME ?? "openrelayproject",
-    credential:
-      process.env.NEXT_PUBLIC_TURN_CREDENTIAL ?? "openrelayproject",
+    urls: process.env.NEXT_PUBLIC_TURN_URL ?? "turn:openrelay.metered.ca:80",
+    username: process.env.NEXT_PUBLIC_TURN_USERNAME ?? "openrelayproject",
+    credential: process.env.NEXT_PUBLIC_TURN_CREDENTIAL ?? "openrelayproject",
   },
 ];
 
+type CardStage = "waiting" | "connected";
+type Card = { id: number; stage: CardStage };
+
+/* ──────────────────────────────────────────────── */
+/*  Komponent jednej karty                        */
+/* ──────────────────────────────────────────────── */
+
+function SessionCard({
+  stage,
+  localVideoRef,
+  remoteVideoRef,
+  status,
+  hasLocalVideo,
+  messages,
+  started,
+  sendMessage,
+  newMessage,
+  setNewMessage,
+}: {
+  stage: CardStage;
+  localVideoRef: React.RefObject<HTMLVideoElement | null>;
+  remoteVideoRef: React.RefObject<HTMLVideoElement | null>;
+  status: string;
+  hasLocalVideo: boolean;
+  messages: { self: boolean; text: string }[];
+  started: boolean;
+  sendMessage: (e: FormEvent) => void;
+  newMessage: string;
+  setNewMessage: (v: string) => void;
+}) {
+  return (
+    <div className="relative flex flex-col h-full w-full">
+      {/* partner video alebo waiting */}
+      <div className="flex-1 relative bg-black overflow-hidden">
+        <video
+          ref={stage === "connected" ? remoteVideoRef : undefined}
+          autoPlay
+          className="w-full h-full object-cover"
+        />
+
+        <div className="absolute inset-0 flex items-center justify-center text-white text-sm bg-black/30 pointer-events-none">
+          {stage === "waiting" ? "Čakám na partnera…" : status}
+        </div>
+      </div>
+
+      {/* tvoje video */}
+      <div className="flex-1 relative bg-black overflow-hidden">
+        {!hasLocalVideo && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-white text-sm">
+            Kamera vypnutá
+          </div>
+        )}
+        <video
+          ref={localVideoRef}
+          autoPlay
+          muted
+          className="w-full h-full object-cover"
+        />
+
+        {/* chat overlay */}
+        {started && (
+          <div className="absolute inset-x-0 bottom-16 md:bottom-24 max-h-40 md:max-h-48 overflow-y-auto p-2 bg-transparent">
+            {messages.map((m, i) => (
+              <div key={i} className={m.self ? "text-right" : "text-left"}>
+                <span className="inline-block px-2 py-1 my-1 rounded bg-white/80 text-black">
+                  {m.text}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* chat input */}
+        {started && (
+          <form
+            onSubmit={sendMessage}
+            className="absolute inset-x-0 bottom-0 flex gap-2 p-2 bg-transparent"
+          >
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              className="flex-grow border border-white/30 rounded-full px-3 py-1 bg-transparent text-white placeholder-white/70"
+              placeholder="Napíšte správu…"
+            />
+            <button
+              type="submit"
+              aria-label="Poslať"
+              className="px-4 py-1 bg-white/20 text-white rounded hover:bg-white/30"
+            >
+              <MdSend />
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────── */
+/*  Hlavný komponent                              */
+/* ──────────────────────────────────────────────── */
+
 function ChatPage() {
+  /* refs na videá & streamy */
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
 
+  /* socket & peer refs */
   const peerRef = useRef<SimplePeer.Instance | null>(null);
   const socketRef = useRef<ReturnType<typeof io> | null>(null);
 
-  const [status, setStatus] = useState(
-    "Kliknite Štart pre povolenie kamery…"
-  );
+  /* UI stav */
+  const [status, setStatus] = useState("Kliknite Štart pre povolenie kamery…");
   const [hasLocalVideo, setHasLocalVideo] = useState(true);
   const [nextEnabled, setNextEnabled] = useState(false);
   const [started, setStarted] = useState(false);
   const [partnerId, setPartnerId] = useState<string | null>(null);
   const [hasReported, setHasReported] = useState(false);
-  const [messages, setMessages] = useState<
-    { self: boolean; text: string }[]
-  >([]);
+  const [messages, setMessages] = useState<{ self: boolean; text: string }[]>(
+    []
+  );
   const [newMessage, setNewMessage] = useState("");
 
+  /* action-panel auto-hide */
   const [panelVisible, setPanelVisible] = useState(true);
   const hideTimer = useRef<NodeJS.Timeout | null>(null);
-
-  const touchStartY = useRef<number | null>(null);
-  const touchEndY = useRef<number | null>(null);
-
-  const searchParams = useSearchParams();
-  const filterCountry = searchParams?.get("country") || "";
-  const filterGender  = searchParams?.get("gender")  || "";
-
   function showPanel(ms = 5000) {
     setPanelVisible(true);
     if (hideTimer.current) clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => setPanelVisible(false), ms);
   }
 
-  /* ───── Socket setup ───── */
+  /* swipe gestá */
+  const touchStartY = useRef<number | null>(null);
+  const touchEndY = useRef<number | null>(null);
+
+  /* filtre v URL */
+  const searchParams = useSearchParams();
+  const filterCountry = searchParams?.get("country") || "";
+  const filterGender = searchParams?.get("gender") || "";
+
+  /* ─────── TikTok scroll: pole kariet ─────── */
+  const [cards, setCards] = useState<Card[]>([
+    { id: Date.now(), stage: "waiting" },
+  ]);
+
+  /* ─────────────────────────────────────────── */
+  /*  Socket setup                              */
+  /* ─────────────────────────────────────────── */
+
   function connectSocket() {
     setNextEnabled(false);
+
     const socket = io({
       path: "/api/socket",
       query: { country: filterCountry, gender: filterGender },
@@ -81,6 +202,12 @@ function ChatPage() {
       setPartnerId(otherId);
       setHasReported(false);
       setMessages([]);
+      // prepni hornú kartu na "connected"
+      setCards((c) =>
+        c.map((card, i) =>
+          i === c.length - 1 ? { ...card, stage: "connected" } : card
+        )
+      );
       startPeer(otherId, initiator);
       setNextEnabled(true);
     });
@@ -102,7 +229,10 @@ function ChatPage() {
     );
   }
 
-  /* ───── Camera setup ───── */
+  /* ─────────────────────────────────────────── */
+  /*  Kamera                                   */
+  /* ─────────────────────────────────────────── */
+
   async function startCamera() {
     if (localStreamRef.current) return;
     try {
@@ -137,12 +267,14 @@ function ChatPage() {
     setStarted(true);
   }
 
-  /* ───── Cleanup ───── */
+  /* ─────────────────────────────────────────── */
+  /*  Čistenie                                  */
+  /* ─────────────────────────────────────────── */
+
   function cleanupPeer() {
     peerRef.current?.destroy();
     socketRef.current?.disconnect();
-    if (remoteVideoRef.current)
-      remoteVideoRef.current.srcObject = null;
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     setPartnerId(null);
     setHasReported(false);
     setMessages([]);
@@ -151,11 +283,9 @@ function ChatPage() {
 
   const cleanupFull = useCallback(() => {
     cleanupPeer();
-    const ls = localVideoRef.current
-      ?.srcObject as MediaStream | null;
+    const ls = localVideoRef.current?.srcObject as MediaStream | null;
     ls?.getTracks().forEach((t) => t.stop());
-    if (localVideoRef.current)
-      localVideoRef.current.srcObject = null;
+    if (localVideoRef.current) localVideoRef.current.srcObject = null;
     localStreamRef.current = null;
     if (hideTimer.current) {
       clearTimeout(hideTimer.current);
@@ -167,7 +297,10 @@ function ChatPage() {
 
   useEffect(() => cleanupFull, [cleanupFull]);
 
-  /* ───── Peer setup ───── */
+  /* ─────────────────────────────────────────── */
+  /*  Peer setup                                */
+  /* ─────────────────────────────────────────── */
+
   async function startPeer(otherId: string, initiator: boolean) {
     const stream = localStreamRef.current ?? new MediaStream();
     const peer = new SimplePeer({
@@ -202,17 +335,33 @@ function ChatPage() {
     localVideoRef.current.playsInline = true;
   }
 
-
-  function nextPartner() {
-    cleanupPeer();
-    connectSocket();
-    setStatus("Čakám na partnera…");
-    setNextEnabled(false);
-    setPartnerId(null);
-    setHasReported(false);
-    setMessages([]);
-    setNewMessage("");
+/*  tesne za definíciu attachLocalStream()  */
+useEffect(() => {
+  // keď pribudne/ubudne karta, ref ukazuje na nový <video>
+  if (localVideoRef.current && localStreamRef.current) {
+    attachLocalStream(localStreamRef.current);
   }
+}, [cards]);          // spustí sa po každej zmene cards
+
+  /* ─────────────────────────────────────────── */
+  /*  UI Handlery                               */
+  /* ─────────────────────────────────────────── */
+
+function nextPartner() {
+  cleanupPeer();
+  connectSocket();
+
+  /* reset UI stavov… */
+  setStatus("Čakám na partnera…");
+  setNextEnabled(false);
+  setPartnerId(null);
+  setHasReported(false);
+  setMessages([]);
+  setNewMessage("");
+
+  /* ➊  NAMIETO push() => returnujeme nové pole iba s novou kartou   */
+  setCards([{ id: Date.now(), stage: "waiting" }]);
+}
 
   function reportPartner() {
     if (!partnerId || !socketRef.current) return;
@@ -250,118 +399,95 @@ function ChatPage() {
     setNewMessage("");
   }
 
-  /* ───── UI ───── */
+  /* ─────────────────────────────────────────── */
+  /*  Render                                    */
+  /* ─────────────────────────────────────────── */
+
+  const transition: Transition = {
+  duration: 0.45,
+  ease: [0.42, 0, 0.58, 1],        // ekvivalent ‘ease-in-out’
+};
+
   return (
-    <div className="h-screen w-full flex flex-col">
+    <div className="relative h-screen w-full overflow-hidden">
+      {/* Swipe oblast */}
       <div
-        className="relative flex flex-col md:flex-row flex-1"
+        className="absolute inset-0"
         onClick={() => showPanel()}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* partner video */}
-        <div className="flex-1 relative bg-black overflow-hidden">
-          <video
-            ref={remoteVideoRef}
-            autoPlay
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute bottom-2 right-2 text-white text-xs opacity-70 pointer-events-none select-none">
-            LUMIA
-          </div>
-          <div className="absolute inset-0 flex items-center justify-center text-white text-sm bg-black/30 pointer-events-none">
-            {status}
-          </div>
-        </div>
+<AnimatePresence mode="sync" initial={false}>
+  {cards.map((card, idx) => {
+    const isTop = idx === cards.length - 1;
 
-        {/* your video + chat */}
-        <div className="flex-1 relative bg-black overflow-hidden">
-          {!hasLocalVideo && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-white text-sm">
-              Kamera vypnutá
-            </div>
-          )}
-          <video
-            ref={localVideoRef}
-            autoPlay
-            muted
-            className="w-full h-full object-cover"
-          />
+    return (
+      <motion.div
+        key={card.id}
+        className="absolute inset-0"
+        style={{ zIndex: isTop ? 2 : 1 }}   /* nová karta navrchu */
 
-          {/* chat overlay */}
-          {started && (
-            <div className="absolute inset-x-0 bottom-16 md:bottom-24 max-h-40 md:max-h-48 overflow-y-auto p-2 bg-transparent">
-              {messages.map((m, i) => (
-                <div key={i} className={m.self ? "text-right" : "text-left"}>
-                  <span className="inline-block px-2 py-1 my-1 rounded bg-white/80 text-black">
-                    {m.text}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+        initial={{ y: "100%", opacity: 1 }} /* prichádza zospodu   */
+        animate={{ y: 0,       opacity: 1 }} /* usadí sa            */
+        exit={{    y: "-100%",  opacity: 0 }} /* stará letí hore     */
 
-          {/* chat input */}
-          {started && (
-            <form
-              onSubmit={sendMessage}
-              className="absolute inset-x-0 bottom-0 flex gap-2 p-2 bg-transparent"
-            >
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                className="flex-grow border border-white/30 rounded-full px-3 py-1 bg-transparent text-white placeholder-white/70"
-                placeholder="Napíšte správu…"
-              />
-              <button
-                type="submit"
-                aria-label="Poslať"
-                className="px-4 py-1 bg-white/20 text-white rounded hover:bg-white/30"
-              >
-                <MdSend />
-              </button>
-            </form>
-          )}
-        </div>
+        transition={transition}
+      >
+                <SessionCard
+                  stage={card.stage}
+                  localVideoRef={localVideoRef}
+                  remoteVideoRef={remoteVideoRef}
+                  status={status}
+                  hasLocalVideo={hasLocalVideo}
+                  messages={messages}
+                  started={started}
+                  sendMessage={sendMessage}
+                  newMessage={newMessage}
+                  setNewMessage={setNewMessage}
+                />
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
 
-        {/* action panell */}
-        <div
-          className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex items-center gap-3 md:flex-col md:gap-2 bg-white/20 backdrop-blur-md border border-white/30 text-white px-4 py-2 rounded-2xl transition-opacity ${panelVisible ? "" : "opacity-0 pointer-events-none"}`}
-        >
-          {!started ? (
+      {/* action panel (štart / next / report) */}
+      <div
+        className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex items-center gap-3 md:flex-col md:gap-2 bg-white/20 backdrop-blur-md border border-white/30 text-white px-4 py-2 rounded-2xl transition-opacity ${
+          panelVisible ? "" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        {!started ? (
+          <button
+            onClick={handleStart}
+            className="px-4 py-2 bg-white text-green-600 rounded-lg md:rounded"
+          >
+            Štart
+          </button>
+        ) : (
+          <div className="flex gap-2 md:flex-col">
             <button
-              onClick={handleStart}
-              className="px-4 py-2 bg-white text-green-600 rounded-lg md:rounded"
+              onClick={nextPartner}
+              disabled={!nextEnabled}
+              aria-label="Ďalší"
+              className="px-4 py-2 md:px-3 md:py-2 bg-red-500 md:bg-red-600 rounded-lg md:rounded disabled:opacity-50"
             >
-              Štart
+              <MdSwipe className="block md:hidden" />
+              <MdNavigateNext className="hidden md:block" />
             </button>
-          ) : (
-            <div className="flex gap-2 md:flex-col">
-              <button
-                onClick={nextPartner}
-                disabled={!nextEnabled}
-                aria-label="Ďalší"
-                className="px-4 py-2 md:px-3 md:py-2 bg-red-500 md:bg-red-600 rounded-lg md:rounded disabled:opacity-50"
-              >
-                <MdSwipe className="block md:hidden" />
-                <MdNavigateNext className="hidden md:block" />
-              </button>
-              <button
-                onClick={reportPartner}
-                disabled={!partnerId || hasReported}
-                aria-label="Nahlásiť"
-                className="px-4 py-2 md:px-3 md:py-2 bg-orange-400 md:bg-orange-600 rounded-lg md:rounded disabled:opacity-50"
-              >
-                <MdOutlineLocalPolice />
-              </button>
-            </div>
-          )}
-        </div>
+            <button
+              onClick={reportPartner}
+              disabled={!partnerId || hasReported}
+              aria-label="Nahlásiť"
+              className="px-4 py-2 md:px-3 md:py-2 bg-orange-400 md:bg-orange-600 rounded-lg md:rounded disabled:opacity-50"
+            >
+              <MdOutlineLocalPolice />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 export default requireAuth(ChatPage);
-
