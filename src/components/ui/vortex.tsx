@@ -2,7 +2,6 @@ import { cn } from "@/lib/utils";
 import React, {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   type ReactNode,
 } from "react";
@@ -21,21 +20,16 @@ interface VortexProps {
   baseRadius?: number;
   rangeRadius?: number;
   backgroundColor?: string;
-  /**  
-   *  `"horizontal"` – vždy vodorovný pás  
-   *  `"vertical"`  – vždy zvislý pás  
-   *  `"auto"`     – podľa orientácie displeja (portrét ⇢ vertical, landscape ⇢ horizontal)  
-   */
   orientation?: "horizontal" | "vertical" | "auto";
 }
 
 export const Vortex = (props: VortexProps) => {
-  /* -------------------------- refs & persistent data -------------------------- */
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const animationFrameId = useRef<number | null>(null);
+  const resizeRaf = useRef<number | null>(null);
 
-  /* ---------------------------- incoming props --------------------------- */
+  // parameters
   const particleCount = props.particleCount ?? 700;
   const particlePropCount = 9;
   const particlePropsLength = particleCount * particlePropCount;
@@ -55,266 +49,210 @@ export const Vortex = (props: VortexProps) => {
   const backgroundColor = props.backgroundColor ?? "#000000";
   const orientation = props.orientation ?? "auto";
 
-  /* ---------------------------- runtime state ---------------------------- */
+  // runtime state
   const tick = useRef(0);
   const center = useRef<[number, number]>([0, 0]);
-  const particleProps = useRef<Float32Array>(
-    new Float32Array(particlePropsLength),
-  );
+  const particleProps = useRef<Float32Array>(new Float32Array(particlePropsLength));
 
-  /* ----------------------------- helpers -------------------------------- */
-  const rand = useCallback((n: number): number => n * Math.random(), []);
-  const randRange = useCallback((n: number): number => n - rand(2 * n), [rand]);
-  const fadeInOut = useCallback((t: number, m: number): number => {
+  // offscreen canvas reference (initialized on client)
+  const offscreenRef = useRef<{
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+  } | null>(null);
+
+  // noise function
+  const noise3D = useRef(createNoise3D(Math.random)).current;
+
+  // helpers
+  const rand = useCallback((n: number) => n * Math.random(), []);
+  const randRange = useCallback((n: number) => n - rand(2 * n), [rand]);
+  const fadeInOut = useCallback((t: number, m: number) => {
     const hm = 0.5 * m;
     return Math.abs(((t + hm) % m) - hm) / hm;
   }, []);
-  const lerp = useCallback(
-    (n1: number, n2: number, speed: number): number =>
-      (1 - speed) * n1 + speed * n2,
-    [],
-  );
+  const lerp = useCallback((a: number, b: number, t: number) => (1 - t) * a + t * b, []);
 
-  /* ------------------------- simplex noise fn --------------------------- */
-  const noise3D = useMemo(() => createNoise3D(Math.random), []);
-
-  /* --------------------------- orientation ------------------------------ */
   const isVertical = useCallback(() => {
     if (orientation === "vertical") return true;
     if (orientation === "horizontal") return false;
-    // auto
     return window.innerHeight > window.innerWidth;
   }, [orientation]);
 
-  /* --------------------------- particles --------------------------------- */
-  const initParticle = useCallback(
-    (i: number) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
+  // particle initialization
+  const initParticle = useCallback((i: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    let x: number, y: number;
+    if (isVertical()) {
+      x = center.current[0] + randRange(rangeY);
+      y = rand(canvas.height);
+    } else {
+      x = rand(canvas.width);
+      y = center.current[1] + randRange(rangeY);
+    }
+    const life = 0;
+    const ttl = baseTTL + rand(rangeTTL);
+    const speed = baseSpeed + rand(rangeSpeed);
+    const radius = baseRadius + rand(rangeRadius);
+    const hue = baseHue + rand(rangeHue);
 
-      let x: number, y: number;
-
-      if (isVertical()) {
-        // zvislý pás (mobil v portréte alebo napevno vertical)
-        x = center.current[0] + randRange(rangeY); // okolo stredu X
-        y = rand(canvas.height); // plná výška
-      } else {
-        // vodorovný pás (desktop / landscape)
-        x = rand(canvas.width); // plná šírka
-        y = center.current[1] + randRange(rangeY); // okolo stredu Y
-      }
-
-      const life = 0;
-      const ttl = baseTTL + rand(rangeTTL);
-      const speed = baseSpeed + rand(rangeSpeed);
-      const radius = baseRadius + rand(rangeRadius);
-      const hue = baseHue + rand(rangeHue);
-
-      particleProps.current.set(
-        [x, y, 0, 0, life, ttl, speed, radius, hue],
-        i,
-      );
-    },
-    [
-      rand,
-      randRange,
-      rangeY,
-      baseTTL,
-      rangeTTL,
-      baseSpeed,
-      rangeSpeed,
-      baseRadius,
-      rangeRadius,
-      baseHue,
-      rangeHue,
-      isVertical,
-    ],
-  );
+    particleProps.current.set([x, y, 0, 0, life, ttl, speed, radius, hue], i);
+  }, [
+    isVertical, rand, randRange, rangeY,
+    baseTTL, rangeTTL, baseSpeed, rangeSpeed,
+    baseRadius, rangeRadius, baseHue, rangeHue,
+  ]);
 
   const initParticles = useCallback(() => {
     tick.current = 0;
-    particleProps.current = new Float32Array(particlePropsLength);
-
-    for (let i = 0; i < particlePropsLength; i += particlePropCount) {
+    const arr = particleProps.current;
+    for (let i = 0; i < arr.length; i += particlePropCount) {
       initParticle(i);
     }
-  }, [initParticle, particlePropCount, particlePropsLength]);
+  }, [initParticle, particlePropCount]);
 
-  const checkBounds = useCallback(
-    (x: number, y: number, canvas: HTMLCanvasElement) =>
-      x > canvas.width || x < 0 || y > canvas.height || y < 0,
-    [],
-  );
+  const checkBounds = useCallback((x: number, y: number, c: HTMLCanvasElement) =>
+    x < 0 || x > c.width || y < 0 || y > c.height, []);
 
-  const updateParticle = useCallback(
-    (i: number, ctx: CanvasRenderingContext2D) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
+  const updateParticlePath = useCallback((i: number, path: Path2D) => {
+    const arr = particleProps.current;
+    const x = arr[i], y = arr[i + 1];
+    const n = noise3D(x * xOff, y * yOff, tick.current * zOff) * noiseSteps * Math.PI * 2;
+    const vx = lerp(arr[i + 2], Math.cos(n), 0.5);
+    const vy = lerp(arr[i + 3], Math.sin(n), 0.5);
+    const life = arr[i + 4] + 1;
+    const ttl = arr[i + 5];
+    const speed = arr[i + 6];
+    const radius = arr[i + 7];
+    const hue = arr[i + 8];
 
-      const i2 = 1 + i,
-        i3 = 2 + i,
-        i4 = 3 + i,
-        i5 = 4 + i,
-        i6 = 5 + i,
-        i7 = 6 + i,
-        i8 = 7 + i,
-        i9 = 8 + i;
+    const x2 = x + vx * speed;
+    const y2 = y + vy * speed;
 
-      const x = particleProps.current[i];
-      const y = particleProps.current[i2];
+    path.moveTo(x, y);
+    path.lineTo(x2, y2);
 
-      const n =
-        noise3D(x * xOff, y * yOff, tick.current * zOff) *
-        noiseSteps *
-        Math.PI *
-        2; // TAU
+    arr[i] = x2;
+    arr[i + 1] = y2;
+    arr[i + 2] = vx;
+    arr[i + 3] = vy;
+    arr[i + 4] = life;
 
-      const vx = lerp(particleProps.current[i3], Math.cos(n), 0.5);
-      const vy = lerp(particleProps.current[i4], Math.sin(n), 0.5);
-      const life = particleProps.current[i5] + 1;
-      const ttl = particleProps.current[i6];
-      const speed = particleProps.current[i7];
-      const radius = particleProps.current[i8];
-      const hue = particleProps.current[i9];
+    if (checkBounds(x2, y2, canvasRef.current!) || life > ttl) {
+      initParticle(i);
+    }
 
-      const x2 = x + vx * speed;
-      const y2 = y + vy * speed;
+    return { radius, hue, life, ttl };
+  }, [
+    checkBounds, initParticle, lerp,
+    noise3D, noiseSteps, xOff, yOff, zOff,
+  ]);
 
-      ctx.save();
-      ctx.lineCap = "round";
-      ctx.lineWidth = radius;
-      ctx.strokeStyle = `hsla(${hue},100%,60%,${fadeInOut(life, ttl)})`;
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-      ctx.closePath();
-      ctx.restore();
-
-      particleProps.current[i] = x2;
-      particleProps.current[i2] = y2;
-      particleProps.current[i3] = vx;
-      particleProps.current[i4] = vy;
-      particleProps.current[i5] = life;
-
-      if (checkBounds(x2, y2, canvas) || life > ttl) initParticle(i);
-    },
-    [
-      noise3D,
-      xOff,
-      yOff,
-      zOff,
-      noiseSteps,
-      lerp,
-      fadeInOut,
-      checkBounds,
-      initParticle,
-    ],
-  );
-
-  /* ------------------------------ canvas fx ------------------------------ */
-  const renderGlow = useCallback(
-    (canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
-      ctx.save();
-      ctx.filter = "blur(8px) brightness(200%)";
-      ctx.globalCompositeOperation = "lighter";
-      ctx.drawImage(canvas, 0, 0);
-      ctx.restore();
-
-      ctx.save();
-      ctx.filter = "blur(4px) brightness(200%)";
-      ctx.globalCompositeOperation = "lighter";
-      ctx.drawImage(canvas, 0, 0);
-      ctx.restore();
-    },
-    [],
-  );
-
-  const renderToScreen = useCallback(
-    (canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
-      ctx.save();
-      ctx.globalCompositeOperation = "lighter";
-      ctx.drawImage(canvas, 0, 0);
-      ctx.restore();
-    },
-    [],
-  );
-
-  /* ------------------------------ helpers ------------------------------- */
-  const resize = useCallback(
-    (canvas: HTMLCanvasElement, ctx?: CanvasRenderingContext2D) => {
-      const { innerWidth, innerHeight } = window;
-      canvas.width = innerWidth;
-      canvas.height = innerHeight;
-      center.current[0] = 0.5 * canvas.width;
-      center.current[1] = 0.5 * canvas.height;
-      ctx?.clearRect(0, 0, canvas.width, canvas.height);
-    },
-    [],
-  );
-
-  /* ------------------------------ main loop ------------------------------ */
-  const draw = useCallback(
-    (canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
-      tick.current += 1;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = backgroundColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      for (let i = 0; i < particlePropsLength; i += particlePropCount) {
-        updateParticle(i, ctx);
-      }
-
-      renderGlow(canvas, ctx);
-      renderToScreen(canvas, ctx);
-
-      animationFrameId.current = window.requestAnimationFrame(() =>
-        draw(canvas, ctx),
-      );
-    },
-    [
-      backgroundColor,
-      particlePropCount,
-      particlePropsLength,
-      updateParticle,
-      renderGlow,
-      renderToScreen,
-    ],
-  );
-
-  /* ----------------------------- lifecycle ------------------------------ */
-  const setup = useCallback(() => {
+  const resizeAll = useCallback(() => {
     const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    resize(canvas, ctx);
-    initParticles();
-    draw(canvas, ctx);
-  }, [draw, initParticles, resize]);
+    if (!canvas) return;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    canvas.width = w;
+    canvas.height = h;
+    if (offscreenRef.current) {
+      offscreenRef.current.canvas.width = w;
+      offscreenRef.current.canvas.height = h;
+    }
+    center.current = [w / 2, h / 2];
+  }, []);
 
   const handleResize = useCallback(() => {
+    if (resizeRaf.current != null) cancelAnimationFrame(resizeRaf.current);
+    resizeRaf.current = requestAnimationFrame(() => {
+      resizeAll();
+      initParticles();
+    });
+  }, [resizeAll, initParticles]);
+
+  const draw = useCallback(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (canvas && ctx) {
-      resize(canvas, ctx);
-      initParticles(); // re-seed particles podľa novej orientácie
+    const off = offscreenRef.current;
+    if (!canvas || !off) return;
+    const ctx = canvas.getContext("2d")!;
+    const offCtx = off.ctx;
+    tick.current++;
+
+    // background
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // draw particles into offscreen
+    offCtx.globalCompositeOperation = "source-over";
+    offCtx.clearRect(0, 0, off.canvas.width, off.canvas.height);
+    let path = new Path2D();
+    const styles: { radius: number; hue: number; alpha: number }[] = [];
+
+    for (let i = 0; i < particlePropsLength; i += particlePropCount) {
+      const { radius, hue, life, ttl } = updateParticlePath(i, path);
+      styles.push({ radius, hue, alpha: fadeInOut(life, ttl) });
+      if (styles.length === 100) {
+        offCtx.lineCap = "round";
+        styles.forEach(s => {
+          offCtx.lineWidth = s.radius;
+          offCtx.strokeStyle = `hsla(${s.hue},100%,60%,${s.alpha})`;
+        });
+        offCtx.stroke(path);
+        path = new Path2D();
+        styles.length = 0;
+      }
     }
-  }, [initParticles, resize]);
+    if (styles.length) {
+      offCtx.lineCap = "round";
+      styles.forEach(s => {
+        offCtx.lineWidth = s.radius;
+        offCtx.strokeStyle = `hsla(${s.hue},100%,60%,${s.alpha})`;
+      });
+      offCtx.stroke(path);
+    }
+
+    // glow via shadowBlur
+    ctx.globalCompositeOperation = "lighter";
+    ctx.save();
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = "#ffffff";
+    ctx.drawImage(off.canvas, 0, 0);
+    ctx.restore();
+
+    // sharp overlay
+    ctx.globalCompositeOperation = "lighter";
+    ctx.drawImage(off.canvas, 0, 0);
+
+    animationFrameId.current = requestAnimationFrame(draw);
+  }, [
+    backgroundColor,
+    particlePropCount,
+    particlePropsLength,
+    updateParticlePath,
+    fadeInOut,
+  ]);
 
   useEffect(() => {
-    setup();
+    // only on client
+    if (typeof document !== "undefined" && !offscreenRef.current) {
+      const c = document.createElement("canvas");
+      offscreenRef.current = {
+        canvas: c,
+        ctx: c.getContext("2d")!,
+      };
+    }
+    resizeAll();
+    initParticles();
+    draw();
     window.addEventListener("resize", handleResize);
     return () => {
       window.removeEventListener("resize", handleResize);
-      if (animationFrameId.current)
-        cancelAnimationFrame(animationFrameId.current);
+      if (animationFrameId.current != null) cancelAnimationFrame(animationFrameId.current);
+      if (resizeRaf.current != null) cancelAnimationFrame(resizeRaf.current);
     };
-  }, [handleResize, setup]);
+  }, [resizeAll, initParticles, draw, handleResize]);
 
-  /* -------------------------------- render ------------------------------- */
   return (
     <div className={cn("relative h-full w-full", props.containerClassName)}>
       <motion.div
@@ -325,8 +263,9 @@ export const Vortex = (props: VortexProps) => {
       >
         <canvas ref={canvasRef} />
       </motion.div>
-
-      <div className={cn("relative z-10", props.className)}>{props.children}</div>
+      <div className={cn("relative z-10", props.className)}>
+        {props.children}
+      </div>
     </div>
   );
 };
