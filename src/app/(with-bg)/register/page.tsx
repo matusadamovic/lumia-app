@@ -4,6 +4,7 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { countries } from '@/lib/countries';
+import { cn, glassClasses } from '@/lib/utils';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -76,31 +77,36 @@ export default function RegisterPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-sm mx-auto p-4">
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="Email"
-        className="border px-3 py-2 rounded"
-        required
-      />
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Password"
-        className="border px-3 py-2 rounded"
-        required
-      />
-      <input
-        type="text"
-        value={nickname}
-        onChange={(e) => setNickname(e.target.value)}
-        placeholder="Nickname"
-        className="border px-3 py-2 rounded"
-        required
-      />
+    <div className="min-h-screen flex items-center justify-center">
+      <form
+        onSubmit={handleSubmit}
+        className={cn(glassClasses, 'p-4 max-w-md w-full flex flex-col gap-4')}
+      >
+        <h1 className="text-xl font-bold text-center">Register</h1>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email"
+          className="border px-3 py-2 rounded"
+          required
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          className="border px-3 py-2 rounded"
+          required
+        />
+        <input
+          type="text"
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+          placeholder="Nickname"
+          className="border px-3 py-2 rounded"
+          required
+        />
       <input
         type="date"
         value={birthdate}
@@ -134,16 +140,22 @@ export default function RegisterPage() {
           <option key={code} value={name}>{flag}</option>
         ))}
       </select>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => setAvatarFile(e.target.files ? e.target.files[0] : null)}
-        className="border px-3 py-2 rounded"
-      />
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-      <button type="submit" className="bg-blue-600 text-white rounded px-4 py-2">
-        Register
-      </button>
-    </form>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) =>
+            setAvatarFile(e.target.files ? e.target.files[0] : null)
+          }
+          className="border px-3 py-2 rounded"
+        />
+        {error && <p className="text-red-600 text-sm">{error}</p>}
+        <button
+          type="submit"
+          className="bg-blue-600 text-white rounded px-4 py-2"
+        >
+          Register
+        </button>
+      </form>
+    </div>
   );
 }
