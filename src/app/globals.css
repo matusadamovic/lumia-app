@@ -15,3 +15,16 @@
     }
   }
 }
+
+/* ------------------------------------------------
+   2) safe-area pre notch + fullscreen layout
+------------------------------------------------ */
+@layer base {
+  html, body, #__next {
+    margin: 0;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    min-height: 100vh;
+    background: #000;
+  }
+}
