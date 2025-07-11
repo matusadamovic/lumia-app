@@ -54,8 +54,13 @@ function ChatPage() {
   const [panelVisible, setPanelVisible] = useState(true);
   const hideTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const touchStartY = useRef<number | null>(null);
-  const touchEndY = useRef<number | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const touchStartY = useRef<number>(0);
+  const currentTranslateY = useRef<number>(0);
+  const isSwiping = useRef<boolean>(false);
+
+  const [isMobile, setIsMobile] = useState(false);
 
   const searchParams = useSearchParams();
   const filterCountry = searchParams?.get("country") || "";
@@ -66,6 +71,15 @@ function ChatPage() {
     if (hideTimer.current) clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => setPanelVisible(false), ms);
   }
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   /* ───── Socket setup ───── */
   function connectSocket() {
@@ -221,24 +235,56 @@ function ChatPage() {
   }
 
   function handleTouchStart(e: React.TouchEvent<HTMLDivElement>) {
+    if (!isMobile) return;
     touchStartY.current = e.touches[0].clientY;
+    isSwiping.current = true;
+  }
+
+  function handleTouchMove(e: React.TouchEvent<HTMLDivElement>) {
+    if (!isSwiping.current || !isMobile) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const deltaY = e.touches[0].clientY - touchStartY.current;
+    currentTranslateY.current = deltaY;
+    if (wrapperRef.current) {
+      wrapperRef.current.style.transform = `translateY(${deltaY}px)`;
+      wrapperRef.current.style.transition = "none";
+    }
   }
 
   function handleTouchEnd(e: React.TouchEvent<HTMLDivElement>) {
-    touchEndY.current = e.changedTouches[0].clientY;
-    if (
-      touchStartY.current !== null &&
-      touchEndY.current !== null &&
-      touchStartY.current - touchEndY.current > 50
-    ) {
-      e.preventDefault();
-      nextPartner();
+    if (!isSwiping.current || !isMobile) return;
+    e.preventDefault();
+    e.stopPropagation();
+    isSwiping.current = false;
+    const threshold = window.innerHeight * 0.25;
+    const deltaY = currentTranslateY.current;
+    const directionUp = deltaY < -threshold;
+    const directionDown = deltaY > threshold;
+    if (!wrapperRef.current) return;
+    if (directionUp) {
+      wrapperRef.current.style.transition = "transform 300ms ease-out";
+      wrapperRef.current.style.transform = "translateY(-100%)";
+      wrapperRef.current.addEventListener(
+        "transitionend",
+        () => {
+          nextPartner();
+          if (wrapperRef.current) {
+            wrapperRef.current.style.transition = "none";
+            wrapperRef.current.style.transform = "translateY(0)";
+          }
+        },
+        { once: true }
+      );
+    } else if (directionDown) {
+      wrapperRef.current.style.transition = "transform 200ms ease-out";
+      wrapperRef.current.style.transform = "translateY(0)";
     } else {
-      e.preventDefault();
+      wrapperRef.current.style.transition = "transform 200ms ease-out";
+      wrapperRef.current.style.transform = "translateY(0)";
       showPanel();
     }
-    touchStartY.current = null;
-    touchEndY.current = null;
+    currentTranslateY.current = 0;
   }
 
   function sendMessage(e: FormEvent) {
@@ -254,10 +300,12 @@ function ChatPage() {
   return (
     <div className="h-screen w-full flex flex-col">
       <div
+        ref={wrapperRef}
         className="relative flex flex-col md:flex-row flex-1"
         onClick={() => showPanel()}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
+        onTouchStart={isMobile ? handleTouchStart : undefined}
+        onTouchMove={isMobile ? handleTouchMove : undefined}
+        onTouchEnd={isMobile ? handleTouchEnd : undefined}
       >
         {/* partner video */}
         <div className="flex-1 relative bg-black overflow-hidden">
