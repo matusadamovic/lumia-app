@@ -213,12 +213,7 @@ function ChatPage() {
     });
 
     socket.on("partner-left", () => {
-      setStatus("Partner odišiel.");
-      setNextEnabled(true);
-      setPartnerId(null);
-      setHasReported(false);
-      setMessages([]);
-      peerRef.current?.destroy();
+      nextPartner();
     });
 
     socket.on("signal", (data: SignalData) =>
