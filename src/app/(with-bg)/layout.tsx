@@ -9,7 +9,7 @@ export default function WithBgLayout({ children }: { children: React.ReactNode }
   const socketRef = useRef<ReturnType<typeof io> | null>(null);
 
   useEffect(() => {
-    const socket = io({ path: '/api/socket' });
+    const socket = io({ path: '/api/socket', query: { purpose: 'count' } });
     socketRef.current = socket;
 
     const handleCount = (count: number) => {

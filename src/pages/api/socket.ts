@@ -49,6 +49,16 @@ export default function handler(
     io.emit("online-count", onlineCount);
     console.log("🆕 spojenie:", socket.id);
 
+    const purpose = socket.handshake.query.purpose;
+    if (purpose === 'count') {
+      socket.on('disconnect', () => {
+        console.log("❌ odpojenie:", socket.id);
+        onlineCount--;
+        io.emit("online-count", onlineCount);
+      });
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from("user_reports")
