@@ -14,9 +14,10 @@ import {
   MdSwipe,
   MdNavigateNext,
   MdOutlineLocalPolice,
+  MdStop,
 } from "react-icons/md";
 import requireAuth from "@/lib/requireAuth";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, Transition,  } from "framer-motion";
 
 /* ──────────────────────────────────────────────── */
@@ -178,6 +179,8 @@ function ChatPage() {
   const searchParams = useSearchParams();
   const filterCountry = searchParams?.get("country") || "";
   const filterGender = searchParams?.get("gender") || "";
+
+  const router = useRouter();
 
   /* ─────── TikTok scroll: pole kariet ─────── */
   const [cards, setCards] = useState<Card[]>([
@@ -358,6 +361,12 @@ function nextPartner() {
   setCards([{ id: Date.now(), stage: "waiting" }]);
 }
 
+  function handleStop() {
+    cleanupFull();
+    setStarted(false);
+    router.push('/');
+  }
+
   function reportPartner() {
     if (!partnerId || !socketRef.current) return;
     socketRef.current.emit("report-user", partnerId);
@@ -477,6 +486,13 @@ function nextPartner() {
               className="px-4 py-2 md:px-3 md:py-2 bg-orange-400 md:bg-orange-600 rounded-lg md:rounded disabled:opacity-50"
             >
               <MdOutlineLocalPolice />
+            </button>
+            <button
+              onClick={handleStop}
+              aria-label="Ukončiť"
+              className="px-4 py-2 md:px-3 md:py-2 bg-blue-500 md:bg-blue-600 rounded-lg md:rounded"
+            >
+              <MdStop />
             </button>
           </div>
         )}

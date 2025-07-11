@@ -16,6 +16,10 @@ export default function NavBar() {
   const router = useRouter()
   const pathname = usePathname()
 
+  if (pathname.startsWith('/chat')) {
+    return null
+  }
+
   async function handleLogout() {
     await supabase.auth.signOut()
     router.push('/')
