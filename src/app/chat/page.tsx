@@ -77,9 +77,11 @@ function SessionCard({
           className="w-full h-full object-cover"
         />
 
-        <div className="absolute inset-0 flex items-center justify-center text-white text-sm bg-black/30 pointer-events-none">
-          {stage === "waiting" ? "Čakám na partnera…" : status}
-        </div>
+        {(stage === "waiting" || status) && (
+          <div className="absolute inset-0 flex items-center justify-center text-white text-sm bg-black/30 pointer-events-none">
+            {stage === "waiting" ? "Čakám na partnera…" : status}
+          </div>
+        )}
       </div>
 
       {/* tvoje video */}
@@ -161,6 +163,14 @@ function ChatPage() {
     []
   );
   const [newMessage, setNewMessage] = useState("");
+
+  // hide connection message after showing it
+  useEffect(() => {
+    if (status === "Video pripojené 🎉") {
+      const t = setTimeout(() => setStatus(""), 2000);
+      return () => clearTimeout(t);
+    }
+  }, [status]);
 
   /* action-panel auto-hide */
   const [panelVisible, setPanelVisible] = useState(true);
