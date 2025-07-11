@@ -1,28 +1,11 @@
 'use client';
 
 import { Vortex } from '@/components/ui/vortex';
-import io from 'socket.io-client';
-import { useEffect, useRef, useState } from 'react';
+import { OnlineCountProvider, useOnlineCount } from '@/lib/onlineCountContext';
 
-export default function WithBgLayout({ children }: { children: React.ReactNode }) {
-  const [particleCount, setParticleCount] = useState(700);
-  const socketRef = useRef<ReturnType<typeof io> | null>(null);
-
-  useEffect(() => {
-    const socket = io({ path: '/api/socket', query: { purpose: 'count' } });
-    socketRef.current = socket;
-
-    const handleCount = (count: number) => {
-      setParticleCount(count < 4 ? 700 : count);
-    };
-
-    socket.on('online-count', handleCount);
-
-    return () => {
-      socket.off('online-count', handleCount);
-      socket.disconnect();
-    };
-  }, []);
+function LayoutContent({ children }: { children: React.ReactNode }) {
+  const count = useOnlineCount();
+  const particleCount = count !== null && count >= 4 ? count : 700;
 
   return (
     <Vortex
@@ -34,5 +17,13 @@ export default function WithBgLayout({ children }: { children: React.ReactNode }
     >
       {children}
     </Vortex>
+  );
+}
+
+export default function WithBgLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <OnlineCountProvider>
+      <LayoutContent>{children}</LayoutContent>
+    </OnlineCountProvider>
   );
 }
