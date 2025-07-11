@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
-import io from 'socket.io-client';
+import { useState } from 'react';
+import { useOnlineCount } from '@/lib/onlineCountContext';
 //import { AuroraBackground } from '@/components/ui/aurora-background'; // uprav cestu podľa svojej štruktúry
 // Background effect provided by layout
 import { glassClasses, cn, iconButtonClasses } from '@/lib/utils';
@@ -24,8 +24,7 @@ const gameTitles = [
 ];
 
 export default function Home() {
-  const [online, setOnline] = useState<number | null>(null);
-  const socketRef = useRef<ReturnType<typeof io> | null>(null);
+  const online = useOnlineCount();
   const [country, setCountry] = useState('');
   const [gender, setGender] = useState('');
   const [countryOpen, setCountryOpen] = useState(false);
@@ -33,19 +32,6 @@ export default function Home() {
   const [gameMode, setGameMode] = useState(false);
   const [gamesOpen, setGamesOpen] = useState(false);
   const [selectedGames, setSelectedGames] = useState<string[]>([]);
-
-  useEffect(() => {
-    const socket = io({ path: '/api/socket', query: { purpose: 'count' } });
-    socketRef.current = socket;
-
-    const handleCount = (count: number) => setOnline(count);
-    socket.on('online-count', handleCount);
-
-    return () => {
-      socket.off('online-count', handleCount);
-      socket.disconnect();
-    };
-  }, []);
 
   return (
     <>
