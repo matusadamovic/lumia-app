@@ -58,7 +58,7 @@ function SessionCard({
 }: {
   stage: CardStage;
   localVideoRef: React.RefObject<HTMLVideoElement | null>;
-  remoteVideoRef: React.RefObject<HTMLVideoElement | null>;
+  remoteVideoRef: React.Ref<HTMLVideoElement>;
   status: string;
   hasLocalVideo: boolean;
   messages: { self: boolean; text: string }[];
@@ -145,7 +145,15 @@ function SessionCard({
 function ChatPage() {
   /* refs na videá & streamy */
   const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const remoteStreamRef = useRef<MediaStream | null>(null);
+  const setRemoteVideoRef = useCallback((node: HTMLVideoElement | null) => {
+    remoteVideoRef.current = node;
+    if (node && remoteStreamRef.current) {
+      node.srcObject = remoteStreamRef.current;
+      node.playsInline = true;
+    }
+  }, []);
   const localStreamRef = useRef<MediaStream | null>(null);
 
   /* socket & peer refs */
@@ -289,6 +297,7 @@ function ChatPage() {
     peerRef.current?.destroy();
     socketRef.current?.disconnect();
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    remoteStreamRef.current = null;
     setPartnerId(null);
     setHasReported(false);
     setMessages([]);
@@ -332,6 +341,7 @@ function ChatPage() {
     );
     peer.on("track", (_t, s) => {
       console.log("🎥 remote track", s);
+      remoteStreamRef.current = s;
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = s;
         remoteVideoRef.current.playsInline = true;
@@ -362,6 +372,13 @@ useEffect(() => {
     attachLocalStream(localStreamRef.current);
   }
 }, [cards]);          // spustí sa po každej zmene cards
+
+useEffect(() => {
+  if (remoteVideoRef.current && remoteStreamRef.current) {
+    remoteVideoRef.current.srcObject = remoteStreamRef.current;
+    remoteVideoRef.current.playsInline = true;
+  }
+}, [cards]);
 
   /* ─────────────────────────────────────────── */
   /*  UI Handlery                               */
@@ -464,7 +481,7 @@ function nextPartner() {
                 <SessionCard
                   stage={card.stage}
                   localVideoRef={localVideoRef}
-                  remoteVideoRef={remoteVideoRef}
+                  remoteVideoRef={setRemoteVideoRef}
                   status={status}
                   hasLocalVideo={hasLocalVideo}
                   messages={messages}
