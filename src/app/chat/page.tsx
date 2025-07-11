@@ -467,7 +467,7 @@ function nextPartner() {
 
       {/* action panel (štart / next / report) */}
       <div
-        className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex items-center gap-3 md:flex-col md:gap-2 bg-white/20 backdrop-blur-md border border-white/30 text-white px-4 py-2 rounded-2xl transition-opacity ${
+        className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex items-center gap-3 lg:flex-col lg:gap-2 bg-white/20 backdrop-blur-md border border-white/30 text-white px-4 py-2 rounded-2xl transition-opacity ${
           panelVisible ? "" : "opacity-0 pointer-events-none"
         }`}
       >
@@ -479,15 +479,15 @@ function nextPartner() {
             Štart
           </button>
         ) : (
-          <div className="flex gap-2 md:flex-col">
+          <div className="flex gap-2 lg:flex-col">
             <button
               onClick={nextPartner}
               disabled={!nextEnabled}
               aria-label="Ďalší"
               className="px-4 py-2 md:px-3 md:py-2 bg-red-500 md:bg-red-600 rounded-lg md:rounded disabled:opacity-50"
             >
-              <MdSwipe className="block md:hidden" />
-              <MdNavigateNext className="hidden md:block" />
+              <MdSwipe className="block lg:hidden" />
+              <MdNavigateNext className="hidden lg:block" />
             </button>
             <button
               onClick={reportPartner}
