@@ -68,7 +68,7 @@ function SessionCard({
   setNewMessage: (v: string) => void;
 }) {
   return (
-    <div className="relative flex flex-col h-full w-full">
+    <div className="relative flex flex-col lg:flex-row h-full w-full">
       {/* partner video alebo waiting */}
       <div className="flex-1 relative bg-black overflow-hidden">
         <video
