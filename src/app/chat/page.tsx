@@ -72,7 +72,8 @@ function SessionCard({
       {/* partner video alebo waiting */}
       <div className="flex-1 relative bg-black overflow-hidden">
         <video
-          ref={stage === "connected" ? remoteVideoRef : undefined}
+          //ref={stage === "connected" ? remoteVideoRef : undefined}
+          ref={remoteVideoRef}
           autoPlay
           className="w-full h-full object-cover"
         />
@@ -147,13 +148,22 @@ function ChatPage() {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteStreamRef = useRef<MediaStream | null>(null);
-  const setRemoteVideoRef = useCallback((node: HTMLVideoElement | null) => {
-    remoteVideoRef.current = node;
-    if (node && remoteStreamRef.current) {
-      node.srcObject = remoteStreamRef.current;
-      node.playsInline = true;
-    }
-  }, []);
+
+const setRemoteVideoRef = useCallback((node: HTMLVideoElement | null) => {
+  // ① pri unmount-e (node === null) nerobíme nič
+  if (!node) return;
+
+  // ② pri mount-e si uložíme element
+  remoteVideoRef.current = node;
+  console.log("🎬 VIDEO REF  mount:", !!node, "stream? ", !!remoteStreamRef.current);
+  // ③ ak už máme stream, hneď ho pripojíme
+  if (remoteStreamRef.current) {
+    node.srcObject = remoteStreamRef.current;
+    node.playsInline = true;
+    console.log("🔗 BOUND      video ⇐ stream");
+  }
+}, []);
+
   const localStreamRef = useRef<MediaStream | null>(null);
 
   /* socket & peer refs */
@@ -296,7 +306,10 @@ function ChatPage() {
     console.log("🧹 cleanupPeer");
     peerRef.current?.destroy();
     socketRef.current?.disconnect();
-    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = null;
+    }
+    remoteVideoRef.current = null;         // ←  ❗️doplnené
     remoteStreamRef.current = null;
     setPartnerId(null);
     setHasReported(false);
@@ -339,19 +352,22 @@ function ChatPage() {
     peer.on("signal", (sig) =>
       socketRef.current?.emit("signal", { to: otherId, data: sig })
     );
-    peer.on("track", (_t, s) => {
-      console.log("🎥 remote track", s);
+
+    peer.on("stream", (s) => {
+      console.log(
+        "🚚 STREAM     got:",
+        s.id,
+        "videoTracks:", s.getVideoTracks().length,
+        "audioTracks:", s.getAudioTracks().length
+      );
       remoteStreamRef.current = s;
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = s;
-        remoteVideoRef.current.playsInline = true;
-        console.log("📺 attached remote stream", remoteVideoRef.current);
-      } else {
-        console.log("⚠️ remoteVideoRef missing when track received");
       }
       setStatus("Video pripojené 🎉");
       showPanel();
     });
+
     peer.on("error", (e) => {
       console.error("peer error", e);
       setStatus("Chyba spojenia, načítajte stránku znovu.");
@@ -373,12 +389,12 @@ useEffect(() => {
   }
 }, [cards]);          // spustí sa po každej zmene cards
 
-useEffect(() => {
-  if (remoteVideoRef.current && remoteStreamRef.current) {
-    remoteVideoRef.current.srcObject = remoteStreamRef.current;
-    remoteVideoRef.current.playsInline = true;
-  }
-}, [cards]);
+//useEffect(() => {
+//  if (remoteVideoRef.current && remoteStreamRef.current) {
+//    remoteVideoRef.current.srcObject = remoteStreamRef.current;
+//    remoteVideoRef.current.playsInline = true;
+//  }
+//}, [cards]);
 
   /* ─────────────────────────────────────────── */
   /*  UI Handlery                               */
